@@ -109,7 +109,7 @@ def get_bid(job_elem, driver):
 
     devtracker_sleep(1, 2)
 
-    # Switch to new Tan
+    # Switch to new Tab as clicking on a bid will open it in a new tab
     driver.switch_to.window(driver.window_handles[-1])
 
     # Check if the Bid is opened & Get Data

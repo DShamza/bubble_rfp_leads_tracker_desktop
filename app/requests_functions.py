@@ -100,7 +100,7 @@ def get_job(job_elem, driver):
 
     devtracker_sleep(1, 2)
 
-    # Switch to new Tan as click will open function in new tab
+    # Switch to new Tab as clicking on a request will open it in a new tab
     driver.switch_to.window(driver.window_handles[-1])
 
     # Check if the Request Page is opened & Get Data
