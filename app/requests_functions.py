@@ -5,6 +5,8 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import InvalidSessionIdException
 from selenium.webdriver.support import expected_conditions as EC
 
 from import_secrets import *
@@ -86,10 +88,16 @@ def get_job(job_elem, driver):
             element.click()
             break
         except Exception as e:
-            logging.critical("[Script Log | Requests]: Exception while trying to click, retrying!")
-            logging.critical(f"[Script Log | Requests]: Error Message {e}")
-            devtracker_sleep(1, 2)
-            continue
+            if isinstance(e, InvalidSessionIdException):
+                raise InvalidSessionIdException
+            if isinstance(e, WebDriverException):
+                raise WebDriverException
+            else:
+                logging.critical("[Script Log | Requests]: Exception while trying to click, retrying!")
+                logging.critical(f"[Script Log | Requests]: Error Message {e}")
+                devtracker_sleep(1, 2)
+                continue
+
     devtracker_sleep(1, 2)
 
     # Switch to new Tan as click will open function in new tab
