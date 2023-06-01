@@ -17,6 +17,7 @@ from functions_slack import channel_name_to_id
 from functions_slack import respond_to_slack_message
 from functions_slack import react_to_slack_message
 
+# Initialize Logs
 config_logs()
 
 
