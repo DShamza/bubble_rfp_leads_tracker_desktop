@@ -6,6 +6,7 @@ from datetime import datetime
 
 from import_secrets import *
 from functions import config_logs
+from functions import gs_update_data
 from functions import open_worksheet
 from functions import gs_get_data
 from functions import devtracker_sleep
@@ -24,20 +25,20 @@ def resp_slack_notifier():
     logging.info("Opening Leads Sheet")
     sh = open_worksheet("Leads")
     leads_sh_data = gs_get_data(sh)
-    req_sh_cols = leads_sh_data[0]
-    leads_df = pd.DataFrame(leads_sh_data[1:], columns=req_sh_cols)
-    leads_df = add_spreadsheet_range_column(leads_df)
+    leads_sh_cols = leads_sh_data[0]
+    leads_df = pd.DataFrame(leads_sh_data[1:], columns=leads_sh_cols)
+    leads_df = add_spreadsheet_range_column(leads_df, leads_sh_cols, ["response_msg_status", "response_thread_id"])
     request_channel_id = channel_name_to_id(request_channel_name)
 
     # Filter Out the rows that do not have Slack threads
     logging.info("Removing Leads without Slack Threads")
-    slack_threads_df = leads_df.loc[leads_df['thread_id'] != '']
+    slack_threads_df = leads_df.loc[leads_df['requests_thread_id'] != '']
     # Filter out only the rows that have matches
     logging.info("Removing Leads without matches")
     matched_df = slack_threads_df.loc[slack_threads_df['response'] != '#N/A']
     # Filter out the rows for which the Slack Message has already been sent.
     logging.info("Removing threads for which the message has already been sent.")
-    unsent_df = matched_df.loc[matched_df['resp_msg_status'] != 'Y']
+    unsent_df = matched_df.loc[matched_df['response_msg_status'] != 'Y']
 
     # Sending Messages to the unsent rows
     logging.info("Rows, Columns:")
@@ -52,7 +53,8 @@ def resp_slack_notifier():
             response_date = unsent_row_vals[6]
             response_body = unsent_row_vals[7]
             url = unsent_row_vals[8]
-            flag_cell_address = unsent_row_vals[-1]
+            flag_cell_address = unsent_row_vals[-2]
+            response_th_cell_address = unsent_row_vals[-1]
 
             thread_timestamp = get_elapsed_ts(request_channel_id, thread_timestamp)
             if thread_timestamp:
@@ -64,7 +66,7 @@ def resp_slack_notifier():
                 react_to_slack_message(channel_id=request_channel_id, thread_ts=thread_timestamp,
                                        reactions=thread_emojis)
             else:
-                sh.update(flag_cell_address, "Expired Thread", value_input_option='USER_ENTERED')
+                gs_update_data(sh, flag_cell_address, "Expired Thread")
                 continue
 
             # Send Message to "rfp-response-time"
@@ -78,12 +80,13 @@ def resp_slack_notifier():
 
             # Send the Message Main Body
             msg_response = slack_notification(channel=response_channel_name, msg_text=main_body_msg)
+            gs_update_data(sh, response_th_cell_address, msg_response)
 
             # Send the Response.
             respond_to_slack_message(channel=response_channel_name, text=thread_msg_text, thread_ts=msg_response)
 
             # Add a "Y" to flag that a message has been sent for this lead
-            sh.update(flag_cell_address, "Y", value_input_option='USER_ENTERED')
+            gs_update_data(sh, flag_cell_address, "Y")
             devtracker_sleep(2, 5)
     else:
         logging.info("No Messages to Send")

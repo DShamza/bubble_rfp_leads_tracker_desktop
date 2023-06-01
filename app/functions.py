@@ -277,6 +277,34 @@ def gs_insert_data(sh, bubble_data):
         break
 
 
+def gs_update_data(sh, sh_range, data):
+    """
+        Update Data into Google Sheets for a given cell/range.
+        :return:
+        """
+    error_count = 0
+    while True:
+        try:
+            sh.update(sh_range, data, value_input_option='RAW')
+        except Exception as e:
+            logging.critical(f"[GS Update Data]: {e}")
+            if error_count % 10 == 0:
+                slack_notification(
+                    channel=main_channel_name,
+                    msg_text=":rotating_light: Error Updating Response Message Status & "
+                             "Response Thread_ID to Google Sheets:rotating_light:",
+                    exception_trace=e)
+                if error_count % 50 == 0:
+                    slack_notification(channel=main_channel_name,
+                                       msg_text=":rotating_light: RFP Response Slack "
+                                                "Notifier is down! :rotating_light:",
+                                       exception_trace=e)
+            devtracker_sleep(1, 5)
+            error_count += 1
+            continue
+        break
+
+
 def diff_df_by_column(df_new, df_old, column_name, duplicate_criteria):
     """
     Returns a new DataFrame containing the rows that are present in df_new but not in df_old,
@@ -308,17 +336,25 @@ def column_index_to_alphabet(column_index):
     return alphabet
 
 
-def add_spreadsheet_range_column(df):
+def add_spreadsheet_range_column(df, columns, columns_to_find):
     """
     This function adds the address of the last column for each row into a new columns "Spreadsheet Range"
+    Args:
+        df:
+        columns:
+        columns_to_find:
+    Returns:
+
     """
-    spreadsheet_ranges = []
-    row_count = df.shape[0]
-    last_col_letter = column_index_to_alphabet(df.shape[1])
-    start_index = 1
-    for i in range(row_count):
-        spreadsheet_ranges.append(f"{last_col_letter}{start_index + 1}")
-        start_index += 1
-    df["Spreadsheet Range"] = spreadsheet_ranges
+    for column_to_find in columns_to_find:
+        col_index = columns.index(column_to_find) + 1
+        spreadsheet_ranges = []
+        row_count = df.shape[0]
+        last_col_letter = column_index_to_alphabet(col_index)
+        start_index = 1
+        for i in range(row_count):
+            spreadsheet_ranges.append(f"{last_col_letter}{start_index + 1}")
+            start_index += 1
+        df[f"{column_to_find}_range"] = spreadsheet_ranges
 
     return df
