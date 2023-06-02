@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 sel_timeout = 20
 
 
-def get_io_bids(driver, page_limit=2):
+def get_io_bids(driver, page_limit=1):
     """Gets All Bids from Bubbleio bids page and store them in dataframe
 
     Args:
