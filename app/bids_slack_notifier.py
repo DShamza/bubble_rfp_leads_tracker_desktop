@@ -5,7 +5,6 @@ from tqdm import tqdm
 from datetime import datetime
 
 from import_secrets import *
-from functions import config_logs
 from functions import gs_update_data
 from functions import open_worksheet
 from functions import gs_get_data
@@ -16,9 +15,6 @@ from functions_slack import slack_notification
 from functions_slack import channel_name_to_id
 from functions_slack import respond_to_slack_message
 from functions_slack import react_to_slack_message
-
-# Initialize Logs
-config_logs()
 
 
 def resp_slack_notifier():

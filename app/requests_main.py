@@ -3,7 +3,6 @@ import logging
 import pandas as pd
 
 from import_secrets import *
-from functions import config_logs
 from functions import get_driver
 from functions import bubbleio_login
 from functions import gs_get_data
@@ -14,9 +13,6 @@ from functions import devtracker_sleep
 from functions_slack import slack_notification
 from requests_functions import show_request_data_to_slack
 from requests_functions import get_io_jobs
-
-# Initialize Logs
-config_logs()
 
 
 def requests_main_script():

@@ -110,7 +110,7 @@ def react_to_slack_message(channel_id, thread_ts, reactions):
                 print(f"Reaction '{reaction}' added successfully.")
             else:
                 print(f"Failed to add reaction. Error: {response['error']}")
-            sleep(0.1)
+            sleep(2)
 
     except SlackApiError as _e:
         print(f"Failed to add reaction. Error: {_e.response['error']}")

@@ -25,7 +25,7 @@ from functions_slack import slack_notification
 from import_secrets import *
 
 # Timezone
-tz_NY = pytz.timezone('UTC')
+tz_NY = pytz.timezone("UTC")
 
 # Browser Settings
 sel_timeout = 20
@@ -42,9 +42,14 @@ def config_logs():
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.INFO)
     formatter = logging.Formatter(
-        "%(levelname)s : {(File:%(filename)s):(Func:%(funcName)s):(Line:%(lineno)d)} - %(message)s")
+        "[%(asctime)s] - %(levelname)s : {(File:%(filename)s):(Func:%(funcName)s):(Line:%(lineno)d)} - %(message)s"
+    )
     handler.setFormatter(formatter)
     root_logger.addHandler(handler)
+
+
+# Initialize Logs
+config_logs()
 
 
 def get_driver():
@@ -59,9 +64,9 @@ def get_driver():
     chrome_options.add_argument("--start-maximized")
     chrome_options.add_argument("--window-size=1366,2500")
     chrome_options.add_argument("--disable-extensions")
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-application-cache')
-    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-application-cache")
+    chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.set_capability("detach", True)
 
@@ -72,8 +77,8 @@ def get_driver():
     # Experimental Features
     prefs = {"profile.managed_default_content_settings.images": 2}
     chrome_options.add_experimental_option("prefs", prefs)
-    chrome_options.add_experimental_option("excludeSwitches", ['enable-automation'])
-    chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
 
     # Install Webdriver
     chromedriver_path = Service(ChromeDriverManager().install())
@@ -206,9 +211,9 @@ def open_worksheet(sheet_name=os.environ.get("TRACKING_SHEET_NAME")):
     """
     # open spreadsheet
     spreadsheet_id = os.environ.get("SPREADSHEET_ID")
-    service_acc_creds = os.environ.get('SERVICE_ACCOUNT_CREDENTIALS')
+    service_acc_creds = os.environ.get("SERVICE_ACCOUNT_CREDENTIALS")
     service_acc_creds = json.loads(service_acc_creds)
-    service_acc_creds['private_key'] = service_acc_creds['private_key'].replace('\\n', '\n')
+    service_acc_creds["private_key"] = service_acc_creds["private_key"].replace("\\n", "\n")
     while True:
         try:
             gc = gspread.service_account_from_dict(service_acc_creds)
@@ -257,7 +262,6 @@ def gs_insert_data(sh, bubble_data):
     error_count = 0
     while True:
         try:
-
             # sh.append_rows(bubble_data, value_input_option="USER_ENTERED", table_range="A1")
             sh.append_rows(bubble_data, value_input_option="RAW", table_range="A1")
         except Exception as e:
@@ -279,13 +283,13 @@ def gs_insert_data(sh, bubble_data):
 
 def gs_update_data(sh, sh_range, data):
     """
-        Update Data into Google Sheets for a given cell/range.
-        :return:
-        """
+    Update Data into Google Sheets for a given cell/range.
+    :return:
+    """
     error_count = 0
     while True:
         try:
-            sh.update(sh_range, data, value_input_option='RAW')
+            sh.update(sh_range, data, value_input_option="RAW")
         except Exception as e:
             logging.critical(f"[GS Update Data]: {e}")
             if error_count % 10 == 0:
@@ -327,7 +331,7 @@ def column_index_to_alphabet(column_index):
     """
     Convert a column index to column alphabet.
     """
-    alphabet = ''
+    alphabet = ""
     while column_index > 0:
         column_index -= 1
         remainder = column_index % 26
