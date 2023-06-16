@@ -1,6 +1,7 @@
 # coding: utf-8
 import logging
 import traceback
+from time import sleep
 from import_secrets import *
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -109,6 +110,7 @@ def react_to_slack_message(channel_id, thread_ts, reactions):
                 print(f"Reaction '{reaction}' added successfully.")
             else:
                 print(f"Failed to add reaction. Error: {response['error']}")
+            sleep(2)
 
     except SlackApiError as _e:
         print(f"Failed to add reaction. Error: {_e.response['error']}")

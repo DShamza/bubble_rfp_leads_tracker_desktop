@@ -5,6 +5,8 @@ import pandas as pd
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import InvalidSessionIdException
 from selenium.webdriver.support import expected_conditions as EC
 
 from import_secrets import *
@@ -17,7 +19,7 @@ from functions_slack import respond_to_slack_message
 sel_timeout = 20
 
 
-def get_io_jobs(driver, page_limit=2):
+def get_io_jobs(driver, page_limit=1):
     """Scrapes job requests from Bubbleio job requests page
 
     Args:
@@ -86,13 +88,19 @@ def get_job(job_elem, driver):
             element.click()
             break
         except Exception as e:
-            logging.critical("[Script Log | Requests]: Exception while trying to click, retrying!")
-            logging.critical(f"[Script Log | Requests]: Error Message {e}")
-            devtracker_sleep(1, 2)
-            continue
+            if isinstance(e, InvalidSessionIdException):
+                raise InvalidSessionIdException
+            if isinstance(e, WebDriverException):
+                raise WebDriverException
+            else:
+                logging.critical("[Script Log | Requests]: Exception while trying to click, retrying!")
+                logging.critical(f"[Script Log | Requests]: Error Message {e}")
+                devtracker_sleep(1, 2)
+                continue
+
     devtracker_sleep(1, 2)
 
-    # Switch to new Tan as click will open function in new tab
+    # Switch to new Tab as clicking on a request will open it in a new tab
     driver.switch_to.window(driver.window_handles[-1])
 
     # Check if the Request Page is opened & Get Data

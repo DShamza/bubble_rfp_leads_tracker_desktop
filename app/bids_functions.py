@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 sel_timeout = 20
 
 
-def get_io_bids(driver, page_limit=2):
+def get_io_bids(driver, page_limit=1):
     """Gets All Bids from Bubbleio bids page and store them in dataframe
 
     Args:
@@ -109,7 +109,7 @@ def get_bid(job_elem, driver):
 
     devtracker_sleep(1, 2)
 
-    # Switch to new Tan
+    # Switch to new Tab as clicking on a bid will open it in a new tab
     driver.switch_to.window(driver.window_handles[-1])
 
     # Check if the Bid is opened & Get Data
