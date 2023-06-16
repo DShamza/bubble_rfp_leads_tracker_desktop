@@ -41,19 +41,18 @@ def requests_main_script():
                 # Get job-requests from first two Pages of Inbox
                 job_requests = get_io_jobs(driver)
                 # Select first 6 columns because 7th Col is for threads which will be added later on
-                req_sh_cols = req_sh_cols[:6]
+                req_sh_cols = req_sh_cols[:7]
                 if len(job_requests) > 0:
                     ext_req_df = pd.DataFrame(job_requests, columns=req_sh_cols)
                 else:
                     ext_req_df = pd.DataFrame([], columns=req_sh_cols)
-
                 # Assign Str Datatype for avoiding numeric duplicates.
                 ext_req_df['name'] = ext_req_df['name'].astype(str)
                 existing_req_df['name'] = existing_req_df['name'].astype(str)
 
                 # Check if there are any new values in the dataset
-                duplicate_criteria = ['name', 'tags', 'pricing', 'description', 'request_url']
-                diff_df = diff_df_by_column(ext_req_df, existing_req_df, 'name', duplicate_criteria)
+                duplicate_criteria = ['rfp_id','name', 'tags', 'pricing', 'description', 'request_url']
+                diff_df = diff_df_by_column(ext_req_df, existing_req_df, 'rfp_id', duplicate_criteria)
                 new_rec_count = str(diff_df.shape[0])
                 logging.info(f"[Script Log | Requests]: New Unique records found: {new_rec_count}")
 

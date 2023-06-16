@@ -130,9 +130,12 @@ def get_bid(job_elem, driver):
     # Extract Current URL
     bid_url = driver.current_url
 
+    # Extract the Rfp_id
+    rfp_id = str(bid_url.split("=")[-1])
+
     # close the new tab
     driver.close()
 
     # Switch Back
     driver.switch_to.window(driver.window_handles[0])
-    return [name, response_date, response, bid_url]
+    return [rfp_id, name, response_date, response, bid_url]

@@ -29,7 +29,7 @@ def bids_main_script():
                 sh = open_worksheet("Bids")
                 bids_sh_data = gs_get_data(sh)
                 logging.info(f"[Script Log | Bids]: Existing Records: {str(len(bids_sh_data))}")
-                bids_sheet_cols = ['name', 'response_date', 'response', 'bid_url']
+                bids_sheet_cols = ['rfp_id','name', 'response_date', 'response', 'bid_url']
                 if len(bids_sh_data) > 0:
                     existing_bids_df = pd.DataFrame(bids_sh_data, columns=bids_sheet_cols)
                 else:
@@ -43,7 +43,7 @@ def bids_main_script():
                     ext_bids_df = pd.DataFrame([], columns=bids_sheet_cols)
 
                 # Check if there are new records
-                diff_df = diff_df_by_column(ext_bids_df, existing_bids_df, 'name', ['name', 'response', 'bid_url'])
+                diff_df = diff_df_by_column(ext_bids_df, existing_bids_df, 'rfp_id', ['rfp_id','name', 'response', 'bid_url'])
                 new_rec_count = str(diff_df.shape[0])
                 logging.info(f"[Script Log | Bids]: New Unique records found: {new_rec_count}")
                 diff_df_final = diff_df.fillna("")
