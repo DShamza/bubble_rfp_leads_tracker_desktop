@@ -37,10 +37,9 @@ def get_io_bids(driver, page_limit=1):
     devtracker_sleep(10, 15)
 
     # Get Bids
-    bid_boxes_all_path = "//div[contains(@class, 'cnaBaJv3')]"
-    bid_box_ind_path = "(//div[contains(@class, 'cnaBaJv3')])[{}]"
-    bid_list = []
-    request_list = []
+    job_boxes_all_path = "//div[contains(@class, 'cnaBaJv3')]"
+    job_box_ind_path = "(//div[contains(@class, 'cnaBaJv3')])[{}]"
+    job_list = []
     while True:
         try:
             # Limit pages to be scrapped
@@ -48,17 +47,14 @@ def get_io_bids(driver, page_limit=1):
                 break
 
             logging.info(f'[Script Log | Bids]: ==========Get Page {pages_scrapped + 1}/{page_limit}===========')
-            WebDriverWait(driver, sel_timeout).until(EC.visibility_of_element_located((By.XPATH, bid_boxes_all_path)))
-            bid_containers = driver.find_elements(By.XPATH, bid_boxes_all_path)
+            WebDriverWait(driver, sel_timeout).until(EC.visibility_of_element_located((By.XPATH, job_boxes_all_path)))
+            job_containers = driver.find_elements(By.XPATH, job_boxes_all_path)
 
-            logging.info(f"[Script Log | Bids]: Number of Bids on Current Page: {len(bid_containers)}")
-            for bid_index in range(len(bid_containers)):
-                current_bid_path = bid_box_ind_path.format(str(bid_index + 1))
-                job_details = get_bid(current_bid_path, driver)
-                bid_details = job_details[0]
-                request_details = job_details[1]
-                bid_list.append(bid_details)
-                request_list.append(request_details)
+            logging.info(f"[Script Log | Bids]: Number of Bids on Current Page: {len(job_containers)}")
+            for job_index in range(len(job_containers)):
+                current_job_path = job_box_ind_path.format(str(job_index + 1))
+                job_details = get_bid(current_job_path, driver)
+                job_list.append(job_details)
 
             # Paginate by finding forward arrow icon
             forward_btn = driver.find_element(By.XPATH, "//button[text()='arrow_forward']")
@@ -83,23 +79,23 @@ def get_io_bids(driver, page_limit=1):
             devtracker_sleep(1, 2)
             raise Exception
 
-    return bid_list
+    return job_list
 
 
-def get_bid(bid_elem, driver):
+def get_bid(job_elem, driver):
     """Get single bid from bid details page
 
     Args:
-        bid_elem (element): Bid container
+        job_elem (element): Bid container
         driver (webdriver): selenium webdriver object
 
     Returns:
         bid[]: bid array
     """
-    # Open Bid
+    # Open Job
     while True:
         try:
-            driver.find_element(By.XPATH, bid_elem).click()
+            driver.find_element(By.XPATH, job_elem).click()
             break
         except InvalidSessionIdException:
             logging.critical("[Script Log | Bids]: Browser Crashed, retrying!")
@@ -116,9 +112,6 @@ def get_bid(bid_elem, driver):
     # Switch to new Tab as clicking on a bid will open it in a new tab
     driver.switch_to.window(driver.window_handles[-1])
 
-    """
-    Extract Bids Data
-    """
     # Check if the Bid is opened & Get Data
     # Extract Name
     name_path = "//div[contains(@class, 'cnaBaVaB8')]"
@@ -137,34 +130,9 @@ def get_bid(bid_elem, driver):
     # Extract Current URL
     bid_url = driver.current_url
 
-    """
-    Extract Request Data 
-    """
-    # Check if the Request Page is opened & Get Data
-    # Extract Name
-    name_path = "//div[contains(@class, 'cnaBaVaB8')]"
-    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, name_path)))
-    name = str(driver.find_element(By.XPATH, name_path).text).strip()
-
-    # Extract Tags
-    tags = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaVaR8')]").text
-
-    # Extract Pricing
-    pricing = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaVaU8')]").text
-
-    # Extract Request Date
-    request_date = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaVaF8')]").text
-    request_date = extract_dates(request_date)
-
-    # Extract Request Description
-    description = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaNaq2')]").text
-
-    # Extract Request URL
-    request_url = driver.current_url
-
     # close the new tab
     driver.close()
 
     # Switch Back
     driver.switch_to.window(driver.window_handles[0])
-    return [name, response_date, response, bid_url], [name, tags, pricing, request_date, description, request_url]
+    return [name, response_date, response, bid_url]
