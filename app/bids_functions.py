@@ -1,7 +1,12 @@
 # coding: utf-8
 import logging
+import pandas as pd
 from functions import extract_dates
+from functions import open_worksheet
 from functions import devtracker_sleep
+from functions import gs_insert_data
+from functions import gs_get_data
+from requests_functions import show_request_data_to_slack
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -83,7 +88,7 @@ def get_io_bids(driver, page_limit=1):
             devtracker_sleep(1, 2)
             raise Exception
 
-    return bid_list
+    return [bid_list, request_list]
 
 
 def get_bid(bid_elem, driver):
@@ -123,7 +128,7 @@ def get_bid(bid_elem, driver):
     # Extract Name
     name_path = "//div[contains(@class, 'cnaBaVaB8')]"
     WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, name_path)))
-    name = str(driver.find_element(By.XPATH, name_path).text).strip()
+    str(driver.find_element(By.XPATH, name_path).text).strip()
 
     # Extract Response Date
     response_date_path = "//div[contains(@class, 'cnaBaVy8')]"
@@ -160,11 +165,46 @@ def get_bid(bid_elem, driver):
     description = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaNaq2')]").text
 
     # Extract Request URL
-    request_url = driver.current_url
+    request_url = "https://bubble.io/agency-requests/inbox?rfp=" + str(bid_url.split("=")[-1])
+
+    # Get the rfp_id
+    rfp_id = str(bid_url.split("=")[-1])
 
     # close the new tab
     driver.close()
 
     # Switch Back
     driver.switch_to.window(driver.window_handles[0])
-    return [name, response_date, response, bid_url], [name, tags, pricing, request_date, description, request_url]
+    return [rfp_id, name, response_date, response, bid_url], [rfp_id, name, tags, pricing, request_date, description,
+                                                              request_url]
+
+
+def check_request_data(request_data):
+    """
+    this function will check either response request is on the spreadsheet or not.
+    Args:
+        request_data:
+
+    Returns:
+
+    """
+    unsent_requests = []
+    sh = open_worksheet("Requests")
+    request_sh_data = gs_get_data(sh)
+    request_sh_cols = request_sh_data[0]
+    request_df = pd.DataFrame(request_sh_data[1:], columns=request_sh_cols)
+
+    # check the response rfp_id value rfp_id from the Request sheet
+    for i in request_data:
+        request_rfp_id = request_df.loc[request_df['rfp_id'] == i[0]]
+        if str(request_rfp_id.index.values) == "[]":
+            logging.info(f"[Script Log | Bids]:request value Not Entered ")
+            unsent_requests.append(i)
+        else:
+            logging.info(f"[Script Log | Bids]:request value already Entered ")
+
+    # save the unsent requests to the Request sheet
+    if len(unsent_requests) > 0:
+        unsent_requests_df = pd.DataFrame(unsent_requests, columns=request_sh_cols[:7])
+        unsent_requests_final_df = show_request_data_to_slack(unsent_requests_df)
+        gs_insert_data(sh, unsent_requests_final_df.values.tolist())

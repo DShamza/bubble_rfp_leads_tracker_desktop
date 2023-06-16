@@ -362,3 +362,9 @@ def add_spreadsheet_range_column(df, columns, columns_to_find):
         df[f"{column_to_find}_range"] = spreadsheet_ranges
 
     return df
+
+
+
+
+
+

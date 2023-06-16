@@ -134,7 +134,7 @@ def get_job(job_elem, driver):
 
     # Switch Back
     driver.switch_to.window(driver.window_handles[0])
-    return [rfp_id,name, tags, pricing, request_date, description, request_url]
+    return [rfp_id, name, tags, pricing, request_date, description, request_url]
 
 
 def show_request_data_to_slack(slack_data_df):

@@ -10,6 +10,7 @@ from functions import open_worksheet
 from functions import diff_df_by_column
 from functions import devtracker_sleep
 from functions import get_driver
+from bids_functions import check_request_data
 from bids_functions import get_io_bids
 from functions_slack import slack_notification
 
@@ -36,11 +37,16 @@ def bids_main_script():
                     existing_bids_df = pd.DataFrame([], columns=bids_sheet_cols)
 
                 # Get New Data
-                bids = get_io_bids(driver)
-                if len(bids) > 0:
-                    ext_bids_df = pd.DataFrame(bids, columns=bids_sheet_cols)
+                job_data = get_io_bids(driver)
+                request_data = job_data[1]
+                bids_data = job_data[0]
+                if len(bids_data) > 0:
+                    ext_bids_df = pd.DataFrame(bids_data, columns=bids_sheet_cols)
                 else:
                     ext_bids_df = pd.DataFrame([], columns=bids_sheet_cols)
+
+                # check whether the request is occurred or not
+                check_request_data(request_data)
 
                 # Check if there are new records
                 diff_df = diff_df_by_column(ext_bids_df, existing_bids_df, 'rfp_id', ['rfp_id','name', 'response', 'bid_url'])
