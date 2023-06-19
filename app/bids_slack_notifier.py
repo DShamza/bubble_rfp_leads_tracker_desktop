@@ -44,12 +44,12 @@ def resp_slack_notifier():
 
     if unsent_df.shape[0]:
         for unsent_row_vals in tqdm(unsent_rows):
-            budget = unsent_row_vals[2]
-            created_date = unsent_row_vals[3]
-            thread_timestamp = unsent_row_vals[5]
-            response_date = unsent_row_vals[6]
-            response_body = unsent_row_vals[7]
-            url = unsent_row_vals[8]
+            budget = unsent_row_vals[3]
+            created_date = unsent_row_vals[4]
+            thread_timestamp = unsent_row_vals[6]
+            response_date = unsent_row_vals[7]
+            response_body = unsent_row_vals[8]
+            url = unsent_row_vals[9]
             flag_cell_address = unsent_row_vals[-2]
             response_th_cell_address = unsent_row_vals[-1]
 
