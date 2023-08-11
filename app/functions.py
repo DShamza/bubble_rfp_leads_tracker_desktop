@@ -158,7 +158,8 @@ def bubbleio_login(driver):
                 driver.get(source_url)
                 sleep(5)
                 WebDriverWait(driver, sel_timeout).until(
-                    EC.visibility_of_element_located((By.XPATH, login_button_path)))
+                    EC.visibility_of_element_located((By.XPATH, login_button_path))
+                )
                 logging.info("[Script Log]: Landing page login button detected")
                 driver.find_element(By.XPATH, login_button_path).click()
                 logging.info("[Script Log]: Clicked landing page login button")
@@ -167,7 +168,8 @@ def bubbleio_login(driver):
                     devtracker_sleep(10, 20)
                     # Check of 2nd Login Button
                     WebDriverWait(driver, sel_timeout).until(
-                        EC.visibility_of_element_located((By.XPATH, login_button_path2)))
+                        EC.visibility_of_element_located((By.XPATH, login_button_path2))
+                    )
                     logging.info("[Script Log]: login page login button detected")
                     # Enter Email & Password
                     sleep(1)
@@ -183,7 +185,8 @@ def bubbleio_login(driver):
                     logging.info("[Script Log]: Click login page login button.")
                     # Validate Login
                     WebDriverWait(driver, sel_timeout).until(
-                        EC.visibility_of_element_located((By.XPATH, app_indicator_path)))
+                        EC.visibility_of_element_located((By.XPATH, app_indicator_path))
+                    )
                     logging.info("[Script Log]: login successful")
                     devtracker_sleep(2, 10)
                 except TimeoutException:
@@ -223,8 +226,9 @@ def open_worksheet(sheet_name=os.environ.get("TRACKING_SHEET_NAME")):
                 sh = spreadsheet.worksheet(sheet_name)
                 logging.info(f"Spreadsheet available: {sheet_name}, Opening Spreadsheet!")
             except Exception as e:
-                logging.critical(f"Error Message: {e}"
-                                 f"\nWorkSheet Not available, adding worksheet {sheet_name}")
+                logging.critical(
+                    f"Error Message: {e}" f"\nWorkSheet Not available, adding worksheet {sheet_name}"
+                )
                 sh = spreadsheet.add_worksheet(title=sheet_name, rows="100", cols="12", index=0)
 
             if not sh:
@@ -270,11 +274,14 @@ def gs_insert_data(sh, bubble_data):
                 slack_notification(
                     channel=main_channel_name,
                     msg_text=":rotating_light: Error while inserting data rows to google sheets :rotating_light:",
-                    exception_trace=e)
+                    exception_trace=e,
+                )
                 if error_count % 50 == 0:
-                    slack_notification(channel=main_channel_name,
-                                       msg_text=":rotating_light: Bids and Requests Tracker is down! :rotating_light:",
-                                       exception_trace=e)
+                    slack_notification(
+                        channel=main_channel_name,
+                        msg_text=":rotating_light: Bids and Requests Tracker is down! :rotating_light:",
+                        exception_trace=e,
+                    )
             devtracker_sleep(1, 5)
             error_count += 1
             continue
@@ -297,12 +304,14 @@ def gs_update_data(sh, sh_range, data):
                     channel=main_channel_name,
                     msg_text=":rotating_light: Error Updating Response Message Status & "
                              "Response Thread_ID to Google Sheets:rotating_light:",
-                    exception_trace=e)
+                    exception_trace=e,
+                )
                 if error_count % 50 == 0:
-                    slack_notification(channel=main_channel_name,
-                                       msg_text=":rotating_light: RFP Response Slack "
-                                                "Notifier is down! :rotating_light:",
-                                       exception_trace=e)
+                    slack_notification(
+                        channel=main_channel_name,
+                        msg_text=":rotating_light: RFP Response Slack " "Notifier is down! :rotating_light:",
+                        exception_trace=e,
+                    )
             devtracker_sleep(1, 5)
             error_count += 1
             continue
@@ -362,3 +371,17 @@ def add_spreadsheet_range_column(df, columns, columns_to_find):
         df[f"{column_to_find}_range"] = spreadsheet_ranges
 
     return df
+
+
+def limit_string(s, max_chars):
+    """
+    Truncates the input string to a maximum number of characters.
+
+    Args:
+        s (str): The input string to be limited.
+        max_chars (int): The maximum number of characters allowed in the output string.
+
+    Returns:
+        str: The truncated string with at most `max_chars` characters.
+    """
+    return s[:max_chars]

@@ -10,6 +10,7 @@ from selenium.common.exceptions import InvalidSessionIdException
 from selenium.webdriver.support import expected_conditions as EC
 
 from import_secrets import *
+from functions import limit_string
 from functions import extract_dates
 from functions import devtracker_sleep
 from functions_slack import slack_notification
@@ -97,7 +98,6 @@ def get_job(job_elem, driver):
                 logging.critical(f"[Script Log | Requests]: Error Message {e}")
                 devtracker_sleep(1, 2)
                 continue
-
     devtracker_sleep(1, 2)
 
     # Switch to new Tab as clicking on a request will open it in a new tab
@@ -120,7 +120,9 @@ def get_job(job_elem, driver):
     request_date = extract_dates(request_date)
 
     # Extract Request Description
+    description_char_limit = 50000
     description = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaNaq2')]").text
+    description = limit_string(s=description, max_chars=description_char_limit)
 
     # Extract Request URL
     request_url = driver.current_url
