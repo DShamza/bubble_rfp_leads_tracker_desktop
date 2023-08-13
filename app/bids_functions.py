@@ -1,5 +1,6 @@
 # coding: utf-8
 import logging
+from functions import limit_string
 from functions import extract_dates
 from functions import devtracker_sleep
 
@@ -124,8 +125,10 @@ def get_bid(job_elem, driver):
     response_date = extract_dates(response_date)
 
     # Extract Response
+    response_char_limit = 50000
     response_path = "//div[contains(@class, 'cnaBaWc8')]"
     response = driver.find_element(By.XPATH, response_path).text
+    response = limit_string(s=response, max_chars=response_char_limit)
 
     # Extract Current URL
     bid_url = driver.current_url
