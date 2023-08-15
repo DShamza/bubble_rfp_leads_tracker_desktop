@@ -63,16 +63,22 @@ def resp_slack_notifier():
 
             thread_timestamp = get_elapsed_ts(request_channel_id, thread_timestamp)
             if thread_timestamp:
+                # Edit Message in "rfp-leads"
+                updated_slack_message = (f"`Budget:` {budget} | `Rep:` {rep_name} | "
+                                         f"`Response Time:` {total_response_time}")
+                edit_slack_message(channel=request_channel_id,
+                                   thread_ts=thread_timestamp,
+                                   updated_text=updated_slack_message)
+
                 # Send Message to "rfp-leads"
                 thread_msg_text = f"""*Response Body* : {response_body}\n*Url*: {url}"""
                 thread_emojis = ["alphabet-white-s", "alphabet-white-e", "alphabet-white-n", "alphabet-white-t",
                                  "alphabet-white-exclamation"]
-                edit_slack_message(channel=request_channel_name,
-                                   thread_ts=thread_timestamp,
-                                   updated_text=f"{budget} | {rep_name} | {total_response_time}")
                 respond_to_slack_message(channel=request_channel_name,
                                          thread_ts=thread_timestamp,
                                          text=thread_msg_text)
+
+                # React to the Message in "rfp-leads"
                 react_to_slack_message(channel_id=request_channel_id,
                                        thread_ts=thread_timestamp,
                                        reactions=thread_emojis)
