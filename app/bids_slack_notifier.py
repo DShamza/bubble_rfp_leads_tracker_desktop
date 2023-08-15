@@ -20,7 +20,7 @@ from functions_slack import react_to_slack_message
 def resp_slack_notifier():
     # Creating a dataframe from Leads Sheet
     logging.info("Opening Leads Sheet")
-    sh = open_worksheet("Leads")
+    sh = open_worksheet("New_Leads")
     leads_sh_data = gs_get_data(sh)
     leads_sh_cols = leads_sh_data[0]
     leads_df = pd.DataFrame(leads_sh_data[1:], columns=leads_sh_cols)
@@ -44,12 +44,13 @@ def resp_slack_notifier():
 
     if unsent_df.shape[0]:
         for unsent_row_vals in tqdm(unsent_rows):
-            budget = unsent_row_vals[2]
-            created_date = unsent_row_vals[3]
-            thread_timestamp = unsent_row_vals[5]
-            response_date = unsent_row_vals[6]
-            response_body = unsent_row_vals[7]
-            url = unsent_row_vals[8]
+            print(f"Unsent Row Values: {unsent_row_vals}")
+            budget = unsent_row_vals[3]
+            created_date = unsent_row_vals[4]
+            thread_timestamp = unsent_row_vals[6]
+            response_date = unsent_row_vals[7]
+            response_body = unsent_row_vals[8]
+            url = unsent_row_vals[9]
             flag_cell_address = unsent_row_vals[-2]
             response_th_cell_address = unsent_row_vals[-1]
 
