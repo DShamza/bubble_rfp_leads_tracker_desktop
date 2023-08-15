@@ -45,7 +45,6 @@ def resp_slack_notifier():
 
     if unsent_df.shape[0]:
         for unsent_row_vals in tqdm(unsent_rows):
-            print(f"Unsent Row Values: {unsent_row_vals}")
             url = f"https://bubble.io/agency-requests/sent?rfp={unsent_row_vals[0]}"
             budget = unsent_row_vals[3]
             created_date = unsent_row_vals[4]
