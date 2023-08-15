@@ -151,3 +151,24 @@ def slack_notification(channel, msg_text, exception_trace=None):
         assert _e.response["ok"] is False
         assert _e.response["error"]  # str like 'invalid_auth', 'channel_not_found'
         logging.critical(f"Got an error: {_e.response['error']}")
+
+
+def edit_slack_message(channel, thread_ts, updated_text):
+    """
+    Edit Slack Message.
+    :param channel:
+    :param thread_ts:
+    :param updated_text:
+    :return:
+    """
+    try:
+        edit_response = client.chat_update(
+            channel=channel,
+            ts=thread_ts,
+            text=updated_text
+        )
+        return edit_response
+    except Exception as e:
+        print(f"Error editing message: {e}")
+        return None
+
