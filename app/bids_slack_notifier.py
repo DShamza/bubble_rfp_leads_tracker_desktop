@@ -15,12 +15,13 @@ from functions_slack import slack_notification
 from functions_slack import channel_name_to_id
 from functions_slack import respond_to_slack_message
 from functions_slack import react_to_slack_message
+from functions_slack import edit_slack_message
 
 
 def resp_slack_notifier():
     # Creating a dataframe from Leads Sheet
     logging.info("Opening Leads Sheet")
-    sh = open_worksheet("Leads")
+    sh = open_worksheet(lead_sheet_name)
     leads_sh_data = gs_get_data(sh)
     leads_sh_cols = leads_sh_data[0]
     leads_df = pd.DataFrame(leads_sh_data[1:], columns=leads_sh_cols)
@@ -44,33 +45,47 @@ def resp_slack_notifier():
 
     if unsent_df.shape[0]:
         for unsent_row_vals in tqdm(unsent_rows):
-            budget = unsent_row_vals[2]
-            created_date = unsent_row_vals[3]
-            thread_timestamp = unsent_row_vals[5]
-            response_date = unsent_row_vals[6]
-            response_body = unsent_row_vals[7]
-            url = unsent_row_vals[8]
+            url = f"https://bubble.io/agency-requests/sent?rfp={unsent_row_vals[0]}"
+            budget = unsent_row_vals[3]
+            created_date = unsent_row_vals[4]
+            thread_timestamp = unsent_row_vals[6]
+            response_date = unsent_row_vals[7]
+            response_body = unsent_row_vals[8]
+            rep_name = unsent_row_vals[9]
             flag_cell_address = unsent_row_vals[-2]
             response_th_cell_address = unsent_row_vals[-1]
 
+            # Calculate Response Time
+            created_date_time = datetime.strptime(created_date, "%d/%m/%Y, %H:%M:%S")
+            response_date_time = datetime.strptime(response_date, "%d/%m/%Y, %H:%M:%S")
+            total_response_time = response_date_time - created_date_time
+
             thread_timestamp = get_elapsed_ts(request_channel_id, thread_timestamp)
             if thread_timestamp:
+                # Edit Message in "rfp-leads"
+                updated_slack_message = (f"`Budget:` {budget} | `Rep:` {rep_name} | "
+                                         f"`Response Time:` {total_response_time}")
+                edit_slack_message(channel=request_channel_id,
+                                   thread_ts=thread_timestamp,
+                                   updated_text=updated_slack_message)
+
                 # Send Message to "rfp-leads"
                 thread_msg_text = f"""*Response Body* : {response_body}\n*Url*: {url}"""
                 thread_emojis = ["alphabet-white-s", "alphabet-white-e", "alphabet-white-n", "alphabet-white-t",
                                  "alphabet-white-exclamation"]
-                respond_to_slack_message(channel=request_channel_name, thread_ts=thread_timestamp, text=thread_msg_text)
-                react_to_slack_message(channel_id=request_channel_id, thread_ts=thread_timestamp,
+                respond_to_slack_message(channel=request_channel_name,
+                                         thread_ts=thread_timestamp,
+                                         text=thread_msg_text)
+
+                # React to the Message in "rfp-leads"
+                react_to_slack_message(channel_id=request_channel_id,
+                                       thread_ts=thread_timestamp,
                                        reactions=thread_emojis)
             else:
                 gs_update_data(sh, flag_cell_address, "Expired Thread")
                 continue
 
             # Send Message to "rfp-response-time"
-            created_date_time = datetime.strptime(created_date, "%d/%m/%Y, %H:%M:%S")
-            response_date_time = datetime.strptime(response_date, "%d/%m/%Y, %H:%M:%S")
-            total_response_time = response_date_time - created_date_time
-
             # Craft Message and Message Thread
             main_body_msg = f"""*Budget* : {budget}\n*Time to response*: {total_response_time} hours"""
             thread_msg_text = f"""*Response Body* : {response_body}\n*Url*: {url}"""

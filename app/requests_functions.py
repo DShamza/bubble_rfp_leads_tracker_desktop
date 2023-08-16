@@ -127,12 +127,15 @@ def get_job(job_elem, driver):
     # Extract Request URL
     request_url = driver.current_url
 
+    # Extract the Rfp_id
+    rfp_id = str(request_url.split("=")[-1])
+
     # close the new tab
     driver.close()
 
     # Switch Back
     driver.switch_to.window(driver.window_handles[0])
-    return [name, tags, pricing, request_date, description, request_url]
+    return [rfp_id, name, tags, pricing, request_date, description, request_url]
 
 
 def show_request_data_to_slack(slack_data_df):
@@ -152,8 +155,8 @@ def show_request_data_to_slack(slack_data_df):
             i.append(time_stamp)
 
         thread_df = pd.DataFrame(slack_data,
-                                 columns=['name', 'tags', 'pricing', 'created_date', 'description', 'request_url',
-                                          'thread_id'])
+                                 columns=['rfp_id', 'name', 'tags', 'pricing', 'created_date', 'description',
+                                          'request_url', 'slack_thread_id'])
         return thread_df
 
 
@@ -162,10 +165,10 @@ def request_message_for_slack(channel_name, data_list):
             send the budget of a new request and its detail in the slack.
             :return:
     """
-    budget = data_list[2]
-    tag = data_list[1]
-    description = data_list[4]
-    url = data_list[5]
+    budget = data_list[3]
+    tag = data_list[2]
+    description = data_list[5]
+    url = data_list[6]
 
     # Craft the thread msg
     thread_msg_text = f"""*Tag* : {tag}\n*Descriptions*: {description}\n*URl*: {url}"""

@@ -130,12 +130,25 @@ def get_bid(job_elem, driver):
     response = driver.find_element(By.XPATH, response_path).text
     response = limit_string(s=response, max_chars=response_char_limit)
 
+    # Extract Rep
+    rep_path = "(//div[contains(@class, 'cnaBaWc8')]//u)[last()]"
+    rep_name = driver.find_element(By.XPATH, rep_path).text
+    rep_name = rep_name.split("|")[0].strip()
+
+    # Extract Rep calendly
+    rep_calendly_path = "//a[contains(@href, 'calendly.com')]"
+    rep_calendly_link = driver.find_element(By.XPATH, rep_calendly_path)
+    rep_calendly_link = rep_calendly_link.get_attribute("href")
+
     # Extract Current URL
     bid_url = driver.current_url
+
+    # Extract the Rfp_id
+    rfp_id = str(bid_url.split("=")[-1])
 
     # close the new tab
     driver.close()
 
     # Switch Back
     driver.switch_to.window(driver.window_handles[0])
-    return [name, response_date, response, bid_url]
+    return [rfp_id, name, response_date, response, bid_url, rep_name, rep_calendly_link]
