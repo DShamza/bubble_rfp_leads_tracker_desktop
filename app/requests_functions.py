@@ -156,7 +156,7 @@ def show_request_data_to_slack(slack_data_df):
 
         thread_df = pd.DataFrame(slack_data,
                                  columns=['rfp_id', 'name', 'tags', 'pricing', 'created_date', 'description',
-                                          'request_url', 'thread_id'])
+                                          'request_url', 'slack_thread_id'])
         return thread_df
 
 
