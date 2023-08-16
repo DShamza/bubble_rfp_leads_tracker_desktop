@@ -21,7 +21,7 @@ from functions_slack import edit_slack_message
 def resp_slack_notifier():
     # Creating a dataframe from Leads Sheet
     logging.info("Opening Leads Sheet")
-    sh = open_worksheet("New_Leads")
+    sh = open_worksheet(lead_sheet_name)
     leads_sh_data = gs_get_data(sh)
     leads_sh_cols = leads_sh_data[0]
     leads_df = pd.DataFrame(leads_sh_data[1:], columns=leads_sh_cols)

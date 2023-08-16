@@ -27,7 +27,7 @@ def requests_main_script():
         if is_logged_in:
             while True:
                 try:
-                    sh = open_worksheet("New_Requests")
+                    sh = open_worksheet(req_sheet_name)
                     req_sh_data = gs_get_data(sh)
                     req_sh_cols = req_sh_data[0]
                     logging.info(f"[Script Log | Requests]: Old records: {str(len(req_sh_data))}")

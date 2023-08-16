@@ -28,7 +28,7 @@ def bids_main_script():
             while True:
                 try:
                     # Get Existing Data
-                    sh = open_worksheet("New_Bids")
+                    sh = open_worksheet(bid_sheet_name)
                     bids_sh_data = gs_get_data(sh)
                     logging.info(f"[Script Log | Bids]: Existing Records: {str(len(bids_sh_data))}")
                     bids_sheet_cols = ['rfp_id', 'name', 'response_date', 'response', 'bid_url', 'rep_name',
