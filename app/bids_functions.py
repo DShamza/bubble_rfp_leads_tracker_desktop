@@ -11,7 +11,7 @@ from selenium.common.exceptions import InvalidSessionIdException
 from selenium.webdriver.support import expected_conditions as EC
 
 # Browser Settings
-sel_timeout = 20
+sel_timeout = 30
 
 
 def get_io_bids(driver, page_limit):

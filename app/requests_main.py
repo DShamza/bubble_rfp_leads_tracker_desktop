@@ -20,6 +20,9 @@ def requests_main_script():
     logging.info("[Script Log | Requests]: Starting Bubbleio Dev Monitor Tool")
     slack_notification(channel=main_channel_name,
                        msg_text=":incoming_envelope: RFP Requests Script Started! :rocket:")
+    # Setting the number of pages from which script can get requests
+    page_limit = 1
+
     try:
         # Check Login & Get apps to track
         driver = get_driver()
@@ -40,7 +43,8 @@ def requests_main_script():
                         existing_req_df = pd.DataFrame([], columns=req_sh_cols)
 
                     # Get job-requests from first two Pages of Inbox
-                    job_requests = get_io_jobs(driver)
+                    logging.info(f"[Script Log | Requests]: Getting Bids, Page Limit: {page_limit}")
+                    job_requests = get_io_jobs(driver, page_limit)
 
                     # Select first 7 columns because 8th Col is for threads which will be added later on
                     req_sh_cols = req_sh_cols[:7]

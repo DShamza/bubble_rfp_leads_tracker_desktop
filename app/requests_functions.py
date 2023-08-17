@@ -20,7 +20,7 @@ from functions_slack import respond_to_slack_message
 sel_timeout = 20
 
 
-def get_io_jobs(driver, page_limit=1):
+def get_io_jobs(driver, page_limit):
     """Scrapes job requests from Bubbleio job requests page
 
     Args:

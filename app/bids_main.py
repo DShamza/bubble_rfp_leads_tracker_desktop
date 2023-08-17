@@ -14,12 +14,12 @@ from functions import open_worksheet
 from functions_slack import slack_notification
 from import_secrets import *
 
-page_limit = 1
-
 
 def bids_main_script():
     logging.info("[Script Log | Bids]: Starting Bubbleio Dev Monitor Tool")
     slack_notification(channel=main_channel_name, msg_text=":outbox_tray: RFP Bids Script Started!  :rocket:")
+    # Setting the number of pages from which script can get bids
+    page_limit = 1
 
     try:
         # Check Login & Get apps to track
@@ -31,6 +31,7 @@ def bids_main_script():
                 try:
                     # Get Existing Data
                     sh = open_worksheet(bid_sheet_name)
+                    logging.info(f"[Script Log | Bids]: Getting Bids, Page Limit: {page_limit}")
                     bids_sh_data = gs_get_data(sh)
                     logging.info(f"[Script Log | Bids]: Existing Records: {str(len(bids_sh_data))}")
                     bids_sheet_cols = ['rfp_id', 'name', 'response_date', 'response', 'bid_url', 'rep_name',
