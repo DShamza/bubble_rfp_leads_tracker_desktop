@@ -25,15 +25,19 @@ def resp_slack_notifier():
     leads_sh_data = gs_get_data(sh)
     leads_sh_cols = leads_sh_data[0]
     leads_df = pd.DataFrame(leads_sh_data[1:], columns=leads_sh_cols)
+
+    # Adding Cell addresses for "response_msg_status" and "response_thread_id"
     leads_df = add_spreadsheet_range_column(leads_df, leads_sh_cols, ["response_msg_status", "response_thread_id"])
     request_channel_id = channel_name_to_id(request_channel_name)
 
     # Filter Out the rows that do not have Slack threads
     logging.info("Removing Leads without Slack Threads")
     slack_threads_df = leads_df.loc[leads_df['requests_thread_id'] != '']
+
     # Filter out only the rows that have matches
     logging.info("Removing Leads without matches")
     matched_df = slack_threads_df.loc[slack_threads_df['response'] != '#N/A']
+
     # Filter out the rows for which the Slack Message has already been sent.
     logging.info("Removing threads for which the message has already been sent.")
     unsent_df = matched_df.loc[matched_df['response_msg_status'] != 'Y']

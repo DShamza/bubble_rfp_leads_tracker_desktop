@@ -14,6 +14,8 @@ from functions import open_worksheet
 from functions_slack import slack_notification
 from import_secrets import *
 
+page_limit = 1
+
 
 def bids_main_script():
     logging.info("[Script Log | Bids]: Starting Bubbleio Dev Monitor Tool")
@@ -39,7 +41,7 @@ def bids_main_script():
                         existing_bids_df = pd.DataFrame([], columns=bids_sheet_cols)
 
                     # Get New Data
-                    bids = get_io_bids(driver)
+                    bids = get_io_bids(driver, page_limit)
                     if len(bids) > 0:
                         ext_bids_df = pd.DataFrame(bids, columns=bids_sheet_cols)
                     else:

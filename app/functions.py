@@ -204,7 +204,7 @@ def bubbleio_login(driver):
     return True
 
 
-def open_worksheet(sheet_name=os.environ.get("TRACKING_SHEET_NAME")):
+def open_worksheet(sheet_name):
     """
     Opens a spreadsheet and returns the provided worksheet by name.
     If the sheet doesn't exist in the spreadsheet, it is inserted
@@ -213,9 +213,7 @@ def open_worksheet(sheet_name=os.environ.get("TRACKING_SHEET_NAME")):
     :return:
     """
     # open spreadsheet
-    spreadsheet_id = os.environ.get("SPREADSHEET_ID")
-    service_acc_creds = os.environ.get("SERVICE_ACCOUNT_CREDENTIALS")
-    service_acc_creds = json.loads(service_acc_creds)
+    service_acc_creds = json.loads(service_acc_credentials)
     service_acc_creds["private_key"] = service_acc_creds["private_key"].replace("\\n", "\n")
     while True:
         try:
