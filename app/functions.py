@@ -249,7 +249,7 @@ def gs_get_data(sh):
         else:
             return sheet_data
     except Exception as e:
-        logging.critical(f"[Functions]: [GS GET Data] Error Message: {e}")
+        logging.critical(f"[Functions]: [GS GET Data] Error Message: {e}", exc_info=True)
 
     return []
 
@@ -334,7 +334,8 @@ def diff_df_by_column(df_new, df_old, column_name, duplicate_criteria):
 
 def column_index_to_alphabet(column_index):
     """
-    Convert a column index to column alphabet.
+    Convert a 0-based column index to its corresponding alphabetical letter.
+    Example: 0 -> 'A', 1 -> 'B', 25 -> 'Z', 26 -> 'AA', ...
     """
     alphabet = ""
     while column_index > 0:

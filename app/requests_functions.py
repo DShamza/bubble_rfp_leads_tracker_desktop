@@ -1,6 +1,7 @@
 # coding: utf-8
 import logging
 import pandas as pd
+from tqdm import tqdm
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -52,20 +53,20 @@ def get_io_jobs(driver, page_limit):
             logging.info(f'[Requests]: ==========Get Page {pages_scrapped + 1}/{page_limit}===========')
             WebDriverWait(driver, sel_timeout).until(EC.visibility_of_element_located((By.XPATH, job_all_boxes_path)))
             job_containers_count = len(driver.find_elements(By.XPATH, job_all_boxes_path))
-            for job_index in range(job_containers_count):
+            for job_index in tqdm(range(job_containers_count)):
                 current_job_path = job_boxes_ind_path.format(str(job_index + 1))
                 job_details = get_job(current_job_path, driver)
                 job_list.append(job_details)
+                logging.info(f"[Requests]: Current App Name: {job_details[1]} | RFP_ID: {job_details[0]}")
 
             forward_btn = driver.find_element(By.XPATH, "//button[text()='arrow_forward']")
             pages = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaDaU3')]")
+            # If no limit applied go till the last page
             if pages:
+                logging.info(f"[Requests]: Currently at page: {pages.text}")
                 pages = pages.text.split("  ")
                 if not forward_btn or int(pages[0]) == int(pages[-1]):
                     break
-
-            if not forward_btn or int(pages[0]) == int(pages[-1]):
-                break
 
             driver.execute_script("arguments[0].click();", forward_btn)
             devtracker_sleep(4, 6)
@@ -150,7 +151,7 @@ def show_request_data_to_slack(slack_data_df):
     if int(slack_data_df.shape[0]) == 0:
         return slack_data_df
     else:
-        for i in slack_data:
+        for i in tqdm(slack_data):
             time_stamp = request_message_for_slack(request_channel_name, i)
             i.append(time_stamp)
 

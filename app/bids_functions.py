@@ -1,5 +1,6 @@
 # coding: utf-8
 import logging
+from tqdm import tqdm
 from functions import limit_string
 from functions import extract_dates
 from functions import devtracker_sleep
@@ -52,18 +53,23 @@ def get_io_bids(driver, page_limit):
             job_containers = driver.find_elements(By.XPATH, job_boxes_all_path)
 
             logging.info(f"[Bids]: Number of Bids on Current Page: {len(job_containers)}")
-            for job_index in range(len(job_containers)):
+            for job_index in tqdm(range(len(job_containers))):
                 current_job_path = job_box_ind_path.format(str(job_index + 1))
                 job_details = get_bid(current_job_path, driver)
                 job_list.append(job_details)
+                logging.info(f"[Requests]: Current App Name: {job_details[1]} | RFP_ID: {job_details[0]}")
 
             # Paginate by finding forward arrow icon
             forward_btn = driver.find_element(By.XPATH, "//button[text()='arrow_forward']")
-            pages = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaLaA3')]").text.split("  ")
+            pages = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaLaA3')]")
 
             # If no limit applied go till the last page
-            if not forward_btn or int(pages[0]) == int(pages[-1]):
-                break
+            if pages:
+                logging.info(f"[Requests]: Currently at page: {pages.text}")
+                pages = pages.text.split("  ")
+                if not forward_btn or int(pages[0]) == int(pages[-1]):
+                    break
+
             driver.execute_script("arguments[0].click();", forward_btn)
             devtracker_sleep(4, 6)
             pages_scrapped += 1

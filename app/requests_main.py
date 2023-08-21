@@ -97,9 +97,4 @@ def requests_main_script():
 
 
 if __name__ == '__main__':
-    # requests_main_script()
-
-    sh = open_worksheet(req_sheet_name)
-    req_sh_data = gs_get_data(sh)
-    print(req_sh_data)
-    # req_sh_cols = req_sh_data[0]
+    requests_main_script()
