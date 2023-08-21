@@ -24,10 +24,10 @@ def get_elapsed_ts(channel_id, message_ts):
         response = client.conversations_history(channel=channel_id, latest=message_ts, limit=1, inclusive=True)
         message = response['messages'][0]
         original_timestamp = message['ts']
-        logging.info(f"Original Timestamp: {original_timestamp}")
+        logging.info(f"[Slack Functions]: Original Timestamp: {original_timestamp}")
         return original_timestamp
     except SlackApiError as _e:
-        logging.critical(f"Error retrieving message details: {_e.response['error']}")
+        logging.critical(f"[Slack Functions]: Error retrieving message details: {_e.response['error']}")
     except IndexError:
         return ""
 
@@ -50,9 +50,9 @@ def channel_name_to_id(channel_name):
                 channel_id = channel['id']
                 return channel_id
         else:
-            logging.error(f"No channel found with the name: {channel_name}")
+            logging.error(f"[Slack Functions]: No channel found with the name: {channel_name}")
     except Exception as _e:
-        logging.critical(f"Error retrieving channel list: {str(_e)}")
+        logging.critical(f"[Slack Functions]: Error retrieving channel list: {str(_e)}")
 
 
 def respond_to_slack_message(channel, thread_ts, text, msg_blocks=None):
@@ -77,12 +77,12 @@ def respond_to_slack_message(channel, thread_ts, text, msg_blocks=None):
             blocks=msg_blocks
         )
         if response["ok"]:
-            logging.info(f"Message sent successfully.")
+            logging.info(f"[Slack Functions]: Message sent successfully.")
         else:
-            logging.error(f"Failed to send message. Error: {response['error']}")
+            logging.error(f"[Slack Functions]: Failed to send message. Error: {response['error']}")
 
     except SlackApiError as _e:
-        logging.critical(f"Failed to send message. Error: {_e.response['error']}")
+        logging.critical(f"[Slack Functions]: Failed to send message. Error: {_e.response['error']}")
 
 
 def react_to_slack_message(channel_id, thread_ts, reactions):
@@ -107,13 +107,13 @@ def react_to_slack_message(channel_id, thread_ts, reactions):
                 name=reaction
             )
             if response["ok"]:
-                logging.info(f"Reaction '{reaction}' added successfully.")
+                logging.info(f"[Slack Functions]: Reaction '{reaction}' added successfully.")
             else:
-                logging.error(f"Failed to add reaction. Error: {response['error']}")
+                logging.error(f"[Slack Functions]: Failed to add reaction. Error: {response['error']}")
             sleep(2)
 
     except SlackApiError as _e:
-        logging.critical(f"Failed to add reaction. Error: {_e.response['error']}")
+        logging.critical(f"[Slack Functions]: Failed to add reaction. Error: {_e.response['error']}")
 
 
 def slack_notification(channel, msg_text, exception_trace=None):
@@ -150,7 +150,7 @@ def slack_notification(channel, msg_text, exception_trace=None):
         # You will get a SlackApiError if "ok" is False
         assert _e.response["ok"] is False
         assert _e.response["error"]  # str like 'invalid_auth', 'channel_not_found'
-        logging.critical(f"Got an error: {_e.response['error']}")
+        logging.critical(f"[Slack Functions]: Got an error: {_e.response['error']}")
 
 
 def edit_slack_message(channel, thread_ts, updated_text):
@@ -169,5 +169,5 @@ def edit_slack_message(channel, thread_ts, updated_text):
         )
         return edit_response
     except Exception as e:
-        logging.critical(f"Error editing message: {e}")
+        logging.critical(f"[Slack Functions]: Error editing message: {e}")
         return None
