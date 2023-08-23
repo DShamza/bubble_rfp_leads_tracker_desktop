@@ -83,9 +83,9 @@ def requests_main_script():
             driver.quit()
             logging.info(f"[Requests]: Closing Driver")
         except Exception as e:
-            logging.info(f"[Requests]: Driver is already closed {e}")
+            logging.warning(f"[Requests]: Driver is already closed {e}")
     except Exception as e:
-        logging.info(f"[Requests]: RFP Request Tracker is Down,  Error: {e}")
+        logging.critical(f"[Requests]: RFP Request Tracker is Down,  Error: {e}")
         slack_notification(channel=main_channel_name,
                            msg_text=":incoming_envelope: :x: RFP Request Tracker is Down :x:",
                            exception_trace=e)

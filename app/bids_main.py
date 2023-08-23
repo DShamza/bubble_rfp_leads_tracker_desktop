@@ -71,9 +71,9 @@ def bids_main_script():
             driver.quit()
             logging.info(f"[Bids]: Closing Driver")
         except Exception as e:
-            logging.info(f"[Bids]: Driver is already closed {e}")
+            logging.warning(f"[Bids]: Driver is already closed {e}")
     except Exception as e:
-        logging.info(f"[Bids]: RFP Bids Tracker is down: {e}")
+        logging.critical(f"[Bids]: RFP Bids Tracker is down: {e}")
         slack_notification(channel=main_channel_name,
                            msg_text=":outbox_tray: :x: RFP Bids Tracker is down. :x:", exception_trace=e)
 

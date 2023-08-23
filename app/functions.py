@@ -95,7 +95,7 @@ def devtracker_sleep(int_min, int_max):
     """
     system_random = random.SystemRandom()
     sleep_interval = system_random.randint(int_min, int_max)
-    logging.debug(f"Sleep Interval: {sleep_interval}")
+    logging.debug(f"[Functions] Sleep Interval: {sleep_interval}")
     sleep(sleep_interval)
 
 
