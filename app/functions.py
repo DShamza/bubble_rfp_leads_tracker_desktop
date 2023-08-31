@@ -41,9 +41,7 @@ def config_logs():
     root_logger.setLevel(logging.INFO)
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.INFO)
-    formatter = logging.Formatter(
-        "[%(asctime)s] - %(levelname)s : {(File:%(filename)s):(Func:%(funcName)s):(Line:%(lineno)d)} - %(message)s"
-    )
+    formatter = logging.Formatter("%(levelname)s - [%(asctime)s]: {(%(filename)s):(Line:%(lineno)d)} - %(message)s")
     handler.setFormatter(formatter)
     root_logger.addHandler(handler)
 
@@ -97,7 +95,7 @@ def devtracker_sleep(int_min, int_max):
     """
     system_random = random.SystemRandom()
     sleep_interval = system_random.randint(int_min, int_max)
-    logging.info(f"Sleep Interval: {sleep_interval}")
+    logging.debug(f"[Functions] Sleep Interval: {sleep_interval}")
     sleep(sleep_interval)
 
 
@@ -148,21 +146,21 @@ def bubbleio_login(driver):
         driver.get(source_url)
         sleep(5)
         driver.find_element(By.XPATH, app_indicator_path)
-        logging.info("Already Logged in..Continue")
+        logging.info("[Functions]: Already Logged in..Continue")
         devtracker_sleep(5, 10)
     except Exception as e:
-        logging.critical(f"Error Message {e}, Not Logged In")
+        logging.critical(f"[Functions]: Error Message {e}, Not Logged In")
         while True:
             try:
-                logging.info("Opening Bubble URL")
+                logging.info("[Functions]: Opening Bubble URL")
                 driver.get(source_url)
                 sleep(5)
                 WebDriverWait(driver, sel_timeout).until(
                     EC.visibility_of_element_located((By.XPATH, login_button_path))
                 )
-                logging.info("[Script Log]: Landing page login button detected")
+                logging.info("[Functions]: Landing page login button detected")
                 driver.find_element(By.XPATH, login_button_path).click()
-                logging.info("[Script Log]: Clicked landing page login button")
+                logging.info("[Functions]: Clicked landing page login button")
                 # Login
                 try:
                     devtracker_sleep(10, 20)
@@ -170,10 +168,10 @@ def bubbleio_login(driver):
                     WebDriverWait(driver, sel_timeout).until(
                         EC.visibility_of_element_located((By.XPATH, login_button_path2))
                     )
-                    logging.info("[Script Log]: login page login button detected")
+                    logging.info("[Functions]: login page login button detected")
                     # Enter Email & Password
                     sleep(1)
-                    logging.info("Entering Credentials")
+                    logging.info("[Functions]: Entering Credentials")
                     driver.find_element(By.XPATH, email_path).clear()
                     driver.find_element(By.XPATH, email_path).send_keys(email)
                     sleep(1)
@@ -182,19 +180,19 @@ def bubbleio_login(driver):
                     sleep(1)
                     # Click Login Button on Login Page
                     driver.find_element(By.XPATH, login_button_path2).click()
-                    logging.info("[Script Log]: Click login page login button.")
+                    logging.info("[Functions]: Click login page login button.")
                     # Validate Login
                     WebDriverWait(driver, sel_timeout).until(
                         EC.visibility_of_element_located((By.XPATH, app_indicator_path))
                     )
-                    logging.info("[Script Log]: login successful")
+                    logging.info("[Functions]: login successful")
                     devtracker_sleep(2, 10)
                 except TimeoutException:
-                    logging.critical("[Script Log]: Login Timeout")
+                    logging.critical("[Functions]: Login Timeout")
                     driver.refresh()
                     continue
             except TimeoutException:
-                logging.critical("[Script Log]: Website Didn't Load, retrying!")
+                logging.critical("[Functions]: Website Didn't Load, retrying!")
                 retry_count = retry_count + 1
                 if retry_count > 3:
                     break
@@ -222,10 +220,10 @@ def open_worksheet(sheet_name):
 
             try:
                 sh = spreadsheet.worksheet(sheet_name)
-                logging.info(f"Spreadsheet available: {sheet_name}, Opening Spreadsheet!")
+                logging.info(f"[Functions]: Spreadsheet available: {sheet_name}, Opening Spreadsheet!")
             except Exception as e:
                 logging.critical(
-                    f"Error Message: {e}" f"\nWorkSheet Not available, adding worksheet {sheet_name}"
+                    f"[Functions]: Error Message: {e}" f"\nWorkSheet Not available, adding worksheet {sheet_name}"
                 )
                 sh = spreadsheet.add_worksheet(title=sheet_name, rows="100", cols="12", index=0)
 
@@ -235,7 +233,7 @@ def open_worksheet(sheet_name):
                 return sh
         except Exception as e:
             devtracker_sleep(5, 10)
-            logging.critical(f"Error connecting with spreadsheet {e}")
+            logging.critical(f"[Functions]: Error connecting with spreadsheet {e}")
             continue
 
 
@@ -251,7 +249,7 @@ def gs_get_data(sh):
         else:
             return sheet_data
     except Exception as e:
-        logging.critical(f"[GS GET Data] Error Message: {e}")
+        logging.critical(f"[Functions]: [GS GET Data] Error Message: {e}", exc_info=True)
 
     return []
 
@@ -267,7 +265,7 @@ def gs_insert_data(sh, bubble_data):
             # sh.append_rows(bubble_data, value_input_option="USER_ENTERED", table_range="A1")
             sh.append_rows(bubble_data, value_input_option="RAW", table_range="A1")
         except Exception as e:
-            logging.critical(f"[GS Insert Data] Error Message: {e}")
+            logging.critical(f"[Functions]: [GS Insert Data] Error Message: {e}")
             if error_count % 10 == 0:
                 slack_notification(
                     channel=main_channel_name,
@@ -296,7 +294,7 @@ def gs_update_data(sh, sh_range, data):
         try:
             sh.update(sh_range, data, value_input_option="RAW")
         except Exception as e:
-            logging.critical(f"[GS Update Data]: {e}")
+            logging.critical(f"[Functions]: [GS Update Data]: {e}")
             if error_count % 10 == 0:
                 slack_notification(
                     channel=main_channel_name,
@@ -336,7 +334,8 @@ def diff_df_by_column(df_new, df_old, column_name, duplicate_criteria):
 
 def column_index_to_alphabet(column_index):
     """
-    Convert a column index to column alphabet.
+    Convert a 0-based column index to its corresponding alphabetical letter.
+    Example: 0 -> 'A', 1 -> 'B', 25 -> 'Z', 26 -> 'AA', ...
     """
     alphabet = ""
     while column_index > 0:

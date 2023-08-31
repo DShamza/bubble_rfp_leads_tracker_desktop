@@ -16,7 +16,7 @@ from import_secrets import *
 
 
 def bids_main_script():
-    logging.info("[Script Log | Bids]: Starting Bubbleio Dev Monitor Tool")
+    logging.info("[Bids]: Starting Bubbleio Dev Monitor Tool")
     slack_notification(channel=main_channel_name, msg_text=":outbox_tray: RFP Bids Script Started!  :rocket:")
     # Setting the number of pages from which script can get bids
     page_limit = 1
@@ -31,9 +31,9 @@ def bids_main_script():
                 try:
                     # Get Existing Data
                     sh = open_worksheet(bid_sheet_name)
-                    logging.info(f"[Script Log | Bids]: Getting Bids, Page Limit: {page_limit}")
+                    logging.info(f"[Bids]: Getting Bids, Page Limit: {page_limit}")
                     bids_sh_data = gs_get_data(sh)
-                    logging.info(f"[Script Log | Bids]: Existing Records: {str(len(bids_sh_data))}")
+                    logging.info(f"[Bids]: Existing Records: {str(len(bids_sh_data))}")
                     bids_sheet_cols = ['rfp_id', 'name', 'response_date', 'response', 'bid_url', 'rep_name',
                                        'rep_calendly_link']
                     if len(bids_sh_data) > 0:
@@ -55,13 +55,13 @@ def bids_main_script():
                                                 duplicate_criteria=['rfp_id', 'name', 'response', 'bid_url', 'rep_name',
                                                                     'rep_calendly_link'])
                     new_rec_count = str(diff_df.shape[0])
-                    logging.info(f"[Script Log | Bids]: New Unique records found: {new_rec_count}")
+                    logging.info(f"[Bids]: New Unique records found: {new_rec_count}")
                     diff_df_final = diff_df.fillna("")
                     gs_insert_data(sh, diff_df_final.values.tolist())
                     devtracker_sleep(10, 15)
 
                 except Exception as e:
-                    logging.info(f"[Script Log | Bids]: RFP Bids Tracker is down: {e}")
+                    logging.info(f"[Bids]: RFP Bids Tracker is down: {e}")
                     slack_notification(channel=main_channel_name,
                                        msg_text=":outbox_tray: :x: RFP Bids Tracker is down. :x:", exception_trace=e)
                     break
@@ -69,11 +69,11 @@ def bids_main_script():
         # Quiting Driver & Restarting
         try:
             driver.quit()
-            logging.info(f"[Script Log | Bids]: Closing Driver")
+            logging.info(f"[Bids]: Closing Driver")
         except Exception as e:
-            logging.info(f"[Script Log | Bids]: Driver is already closed {e}")
+            logging.warning(f"[Bids]: Driver is already closed {e}")
     except Exception as e:
-        logging.info(f"[Script Log | Bids]: RFP Bids Tracker is down: {e}")
+        logging.critical(f"[Bids]: RFP Bids Tracker is down: {e}")
         slack_notification(channel=main_channel_name,
                            msg_text=":outbox_tray: :x: RFP Bids Tracker is down. :x:", exception_trace=e)
 

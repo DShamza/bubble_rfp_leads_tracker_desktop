@@ -1,6 +1,7 @@
 # coding: utf-8
 import logging
 import pandas as pd
+from tqdm import tqdm
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -31,7 +32,7 @@ def get_io_jobs(driver, page_limit):
         :param driver:
         :param page_limit:
     """
-    logging.info(f"[Script Log | Requests]: Opening Job Request Page")
+    logging.info(f"[Requests]: Opening Job Request Page")
     retry_count = 0
     pages_scrapped = 0
     requests_url = f"https://bubble.io/agency-requests/inbox"
@@ -42,36 +43,36 @@ def get_io_jobs(driver, page_limit):
     job_all_boxes_path = "//div[contains(@class, 'cnaBaCh3')]"
     job_boxes_ind_path = "(//div[contains(@class, 'cnaBaCh3')])[{}]"
 
-    logging.info(f"[Script Log | Requests]: {total_request}")
+    logging.info(f"[Requests]: {total_request}")
 
     job_list = []
     while True:
         try:
             if pages_scrapped > page_limit - 1:
                 break
-            logging.info(f'[Script Log | Requests]: ==========Get Page {pages_scrapped + 1}/{page_limit}===========')
+            logging.info(f'[Requests]: ==========Get Page {pages_scrapped + 1}/{page_limit}===========')
             WebDriverWait(driver, sel_timeout).until(EC.visibility_of_element_located((By.XPATH, job_all_boxes_path)))
             job_containers_count = len(driver.find_elements(By.XPATH, job_all_boxes_path))
-            for job_index in range(job_containers_count):
+            for job_index in tqdm(range(job_containers_count)):
                 current_job_path = job_boxes_ind_path.format(str(job_index + 1))
                 job_details = get_job(current_job_path, driver)
                 job_list.append(job_details)
+                logging.info(f"[Requests]: Current App Name: {job_details[1]} | RFP_ID: {job_details[0]}")
 
             forward_btn = driver.find_element(By.XPATH, "//button[text()='arrow_forward']")
             pages = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaDaU3')]")
+            # If no limit applied go till the last page
             if pages:
+                logging.info(f"[Requests]: Currently at page: {pages.text}")
                 pages = pages.text.split("  ")
                 if not forward_btn or int(pages[0]) == int(pages[-1]):
                     break
-
-            if not forward_btn or int(pages[0]) == int(pages[-1]):
-                break
 
             driver.execute_script("arguments[0].click();", forward_btn)
             devtracker_sleep(4, 6)
             pages_scrapped = pages_scrapped + 1
         except TimeoutException:
-            logging.critical("[Script Log | Requests]: Website Didn't Load, retrying!", exc_info=True)
+            logging.critical("[Requests]: Website Didn't Load, retrying!", exc_info=True)
             if retry_count > 3:
                 break
             retry_count = retry_count + 1
@@ -94,8 +95,8 @@ def get_job(job_elem, driver):
             if isinstance(e, WebDriverException):
                 raise WebDriverException
             else:
-                logging.critical("[Script Log | Requests]: Exception while trying to click, retrying!")
-                logging.critical(f"[Script Log | Requests]: Error Message {e}")
+                logging.critical("[Requests]: Exception while trying to click, retrying!")
+                logging.critical(f"[Requests]: Error Message {e}")
                 devtracker_sleep(1, 2)
                 continue
     devtracker_sleep(1, 2)
@@ -150,7 +151,7 @@ def show_request_data_to_slack(slack_data_df):
     if int(slack_data_df.shape[0]) == 0:
         return slack_data_df
     else:
-        for i in slack_data:
+        for i in tqdm(slack_data):
             time_stamp = request_message_for_slack(request_channel_name, i)
             i.append(time_stamp)
 

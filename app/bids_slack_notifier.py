@@ -20,7 +20,7 @@ from functions_slack import edit_slack_message
 
 def resp_slack_notifier():
     # Creating a dataframe from Leads Sheet
-    logging.info("Opening Leads Sheet")
+    logging.info("[Requests Notifier]: Opening Leads Sheet")
     sh = open_worksheet(lead_sheet_name)
     leads_sh_data = gs_get_data(sh)
     leads_sh_cols = leads_sh_data[0]
@@ -31,20 +31,19 @@ def resp_slack_notifier():
     request_channel_id = channel_name_to_id(request_channel_name)
 
     # Filter Out the rows that do not have Slack threads
-    logging.info("Removing Leads without Slack Threads")
+    logging.info("[Requests Notifier]: Removing Leads without Slack Threads")
     slack_threads_df = leads_df.loc[leads_df['requests_thread_id'] != '']
 
     # Filter out only the rows that have matches
-    logging.info("Removing Leads without matches")
+    logging.info("[Requests Notifier]: Removing Leads without matches")
     matched_df = slack_threads_df.loc[slack_threads_df['response'] != '#N/A']
 
     # Filter out the rows for which the Slack Message has already been sent.
-    logging.info("Removing threads for which the message has already been sent.")
+    logging.info("[Requests Notifier]: Removing threads for which the message has already been sent.")
     unsent_df = matched_df.loc[matched_df['response_msg_status'] != 'Y']
 
     # Sending Messages to the unsent rows
-    logging.info("Rows, Columns:")
-    logging.info(unsent_df.shape)
+    logging.info(f"[Requests Notifier]: Rows, Columns: {unsent_df.shape}")
     unsent_rows = unsent_df.values.tolist()
 
     if unsent_df.shape[0]:
@@ -105,20 +104,20 @@ def resp_slack_notifier():
             gs_update_data(sh, flag_cell_address, "Y")
             devtracker_sleep(2, 5)
     else:
-        logging.info("No Messages to Send")
-    logging.info("Iteration complete, Restarting...")
+        logging.info("[Requests Notifier]: No Messages to Send")
+    logging.info("[Requests Notifier]: Iteration complete, Restarting...")
     devtracker_sleep(5, 10)
 
 
 def exec_resp_slack_notifier():
-    logging.info("[Script Log | Requests]: Starting Response Slack Notifier")
+    logging.info("[Requests Notifier]: Starting Response Slack Notifier")
     slack_notification(channel=main_channel_name,
                        msg_text=":grey_exclamation: RFP Response Slack Notifier Started! :rocket:")
     while True:
         try:
             resp_slack_notifier()
         except Exception as e:
-            logging.info(f"[Script Log | Requests]: RFP Response Slack Notifier is Down,  Error: {e}")
+            logging.info(f"[Requests Notifier]: RFP Response Slack Notifier is Down,  Error: {e}")
             slack_notification(channel=main_channel_name,
                                msg_text=":grey_exclamation: :x: RFP Response Slack Notifier is Down :x:",
                                exception_trace=e)

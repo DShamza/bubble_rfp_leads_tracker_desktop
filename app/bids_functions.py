@@ -1,5 +1,6 @@
 # coding: utf-8
 import logging
+from tqdm import tqdm
 from functions import limit_string
 from functions import extract_dates
 from functions import devtracker_sleep
@@ -25,7 +26,7 @@ def get_io_bids(driver, page_limit):
         :param driver:
         :param page_limit:
     """
-    logging.info(f"[Script Log | Bids]: Opening Bid Page")
+    logging.info(f"[Bids]: Opening Bid Page")
     # Open App
     retry_count = 0
     pages_scrapped = 0
@@ -34,7 +35,7 @@ def get_io_bids(driver, page_limit):
     # check for total Bids
     total_bids_path = "//div[@class='bubble-element Text cnaBaJp3']"
     total_bids = driver.find_element(By.XPATH, total_bids_path).text
-    logging.info(f"[Script Log | Bids]: Total Request: {total_bids}")
+    logging.info(f"[Bids]: Total Request: {total_bids}")
     devtracker_sleep(10, 15)
 
     # Get Bids
@@ -47,36 +48,41 @@ def get_io_bids(driver, page_limit):
             if pages_scrapped > page_limit - 1:
                 break
 
-            logging.info(f'[Script Log | Bids]: ==========Get Page {pages_scrapped + 1}/{page_limit}===========')
+            logging.info(f'[Bids]: ==========Get Page {pages_scrapped + 1}/{page_limit}===========')
             WebDriverWait(driver, sel_timeout).until(EC.visibility_of_element_located((By.XPATH, job_boxes_all_path)))
             job_containers = driver.find_elements(By.XPATH, job_boxes_all_path)
 
-            logging.info(f"[Script Log | Bids]: Number of Bids on Current Page: {len(job_containers)}")
-            for job_index in range(len(job_containers)):
+            logging.info(f"[Bids]: Number of Bids on Current Page: {len(job_containers)}")
+            for job_index in tqdm(range(len(job_containers))):
                 current_job_path = job_box_ind_path.format(str(job_index + 1))
                 job_details = get_bid(current_job_path, driver)
                 job_list.append(job_details)
+                logging.info(f"[Requests]: Current App Name: {job_details[1]} | RFP_ID: {job_details[0]}")
 
             # Paginate by finding forward arrow icon
             forward_btn = driver.find_element(By.XPATH, "//button[text()='arrow_forward']")
-            pages = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaLaA3')]").text.split("  ")
+            pages = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaLaA3')]")
 
             # If no limit applied go till the last page
-            if not forward_btn or int(pages[0]) == int(pages[-1]):
-                break
+            if pages:
+                logging.info(f"[Requests]: Currently at page: {pages.text}")
+                pages = pages.text.split("  ")
+                if not forward_btn or int(pages[0]) == int(pages[-1]):
+                    break
+
             driver.execute_script("arguments[0].click();", forward_btn)
             devtracker_sleep(4, 6)
             pages_scrapped += 1
 
         except TimeoutException:
-            logging.info("[Script Log | Bids]: Website Didn't Load, retrying!")
+            logging.info("[Bids]: Website Didn't Load, retrying!")
             # Retry in case page freezes or takes time to load dynamic content
             if retry_count > 3:
                 break
             retry_count = retry_count + 1
             devtracker_sleep(5, 10)
         except InvalidSessionIdException:
-            logging.critical("[Script Log | Bids]: Browser Crashed, retrying!")
+            logging.critical("[Bids]: Browser Crashed, retrying!")
             devtracker_sleep(1, 2)
             raise Exception
 
@@ -99,12 +105,12 @@ def get_bid(job_elem, driver):
             driver.find_element(By.XPATH, job_elem).click()
             break
         except InvalidSessionIdException:
-            logging.critical("[Script Log | Bids]: Browser Crashed, retrying!")
+            logging.critical("[Bids]: Browser Crashed, retrying!")
             devtracker_sleep(1, 2)
             raise Exception
         except Exception as e:
-            logging.critical("[Script Log | Bids]: Exception while trying to click, retrying!")
-            logging.critical(f"[Script Log | Bids]: Error Message {e}")
+            logging.critical("[Bids]: Exception while trying to click, retrying!")
+            logging.critical(f"[Bids]: Error Message {e}")
             devtracker_sleep(1, 2)
             continue
 
