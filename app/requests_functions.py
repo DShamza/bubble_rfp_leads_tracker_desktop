@@ -38,12 +38,15 @@ def get_io_jobs(driver, page_limit):
     requests_url = f"https://bubble.io/agency-requests/inbox"
     driver.get(requests_url)
     devtracker_sleep(10, 15)
-    total_request = driver.find_element(By.XPATH, "//div[@class='bubble-element Text cnaBaAaD3']").text
+
+    # Get Total Number of Requests
+    request_count_path = "//*[@class='bubble-element Text cnaBaAaD3']"
+    request_count = driver.find_element(By.XPATH, request_count_path).text
 
     job_all_boxes_path = "//div[contains(@class, 'cnaBaCh3')]"
     job_boxes_ind_path = "(//div[contains(@class, 'cnaBaCh3')])[{}]"
 
-    logging.info(f"[Requests]: {total_request}")
+    logging.info(f"[Requests]: {request_count}")
 
     job_list = []
     while True:
@@ -60,12 +63,12 @@ def get_io_jobs(driver, page_limit):
                 logging.info(f"[Requests]: Current App Name: {job_details[1]} | RFP_ID: {job_details[0]}")
 
             forward_btn = driver.find_element(By.XPATH, "//button[text()='arrow_forward']")
-            pages = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaDaU3')]")
+            requests_pagination = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaDaU3')]")
             # If no limit applied go till the last page
-            if pages:
-                logging.info(f"[Requests]: Currently at page: {pages.text}")
-                pages = pages.text.split("  ")
-                if not forward_btn or int(pages[0]) == int(pages[-1]):
+            if requests_pagination:
+                logging.info(f"[Requests]: Currently at page: {requests_pagination.text}")
+                requests_pagination = requests_pagination.text.split("  ")
+                if not forward_btn or int(requests_pagination[0]) == int(requests_pagination[-1]):
                     break
 
             driver.execute_script("arguments[0].click();", forward_btn)
@@ -106,7 +109,7 @@ def get_job(job_elem, driver):
 
     # Check if the Request Page is opened & Get Data
     # Extract Name
-    name_path = "//div[contains(@class, 'cnaBaVaB8')]"
+    name_path = "//*[contains(@class, 'cnaBaVaB8')]"
     WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, name_path)))
     name = str(driver.find_element(By.XPATH, name_path).text).strip()
 
@@ -114,7 +117,7 @@ def get_job(job_elem, driver):
     tags = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaVaR8')]").text
 
     # Extract Pricing
-    pricing = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaVaU8')]").text
+    pricing = driver.find_element(By.XPATH, "//*[contains(@class, 'cnaBaVaU8')]").text
 
     # Extract Request Date
     request_date = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaVaF8')]").text
