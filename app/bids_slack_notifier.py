@@ -90,7 +90,8 @@ def resp_slack_notifier():
 
             # Send Message to "rfp-response-time"
             # Craft Message and Message Thread
-            main_body_msg = f"""*Budget* : {budget}\n*Time to response*: {total_response_time} hours"""
+            # main_body_msg = f"""*Budget* : {budget}\n*Time to response*: {total_response_time} hours"""
+            main_body_msg = f"`Budget:` {budget} | `Rep:` {rep_name} | `Response Time:` {total_response_time}"
             thread_msg_text = f"""*Response Body* : {response_body}\n*Url*: {url}"""
 
             # Send the Message Main Body
