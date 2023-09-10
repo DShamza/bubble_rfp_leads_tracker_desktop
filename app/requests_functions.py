@@ -108,10 +108,14 @@ def get_job(job_elem, driver):
     driver.switch_to.window(driver.window_handles[-1])
 
     # Check if the Request Page is opened & Get Data
-    # Extract Name
-    name_path = "//*[contains(@class, 'cnaBaVaB8')]"
-    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, name_path)))
-    name = str(driver.find_element(By.XPATH, name_path).text).strip()
+    # Extract Project Title
+    proj_title_path = "//*[contains(@class, 'cnaBaVaB8')]"
+    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, proj_title_path)))
+    proj_title = str(driver.find_element(By.XPATH, proj_title_path).text).strip()
+
+    # Extract Client First Name
+    f_name_path = "//*[text()='First name']/following-sibling::div[1]"
+    f_name = str(driver.find_element(By.XPATH, f_name_path).text).strip()
 
     # Extract Tags
     tags = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaVaR8')]").text
@@ -139,10 +143,10 @@ def get_job(job_elem, driver):
 
     # Switch Back
     driver.switch_to.window(driver.window_handles[0])
-    return [rfp_id, name, tags, pricing, request_date, description, request_url]
+    return [rfp_id, f_name, proj_title, tags, pricing, request_date, description, request_url]
 
 
-def show_request_data_to_slack(slack_data_df):
+def send_requests_to_slack(slack_data_df):
     """
         iterate each new request.
         send the Slack notification against each request.
@@ -155,27 +159,28 @@ def show_request_data_to_slack(slack_data_df):
         return slack_data_df
     else:
         for i in tqdm(slack_data):
-            time_stamp = request_message_for_slack(request_channel_name, i)
+            time_stamp = send_req_slack_msg(request_channel_name, i)
             i.append(time_stamp)
 
         thread_df = pd.DataFrame(slack_data,
-                                 columns=['rfp_id', 'name', 'tags', 'pricing', 'created_date', 'description',
-                                          'request_url', 'slack_thread_id'])
+                                 columns=['rfp_id', 'client_first_name', 'project_title', 'tags', 'pricing',
+                                          'created_date', 'description', 'request_url', 'slack_thread_id'])
         return thread_df
 
 
-def request_message_for_slack(channel_name, data_list):
+def send_req_slack_msg(channel_name, data_list):
     """
-            send the budget of a new request and its detail in the slack.
-            :return:
+    send the budget of a new request and its detail in the slack.
+    :return:
     """
-    budget = data_list[3]
-    tag = data_list[2]
-    description = data_list[5]
-    url = data_list[6]
+    client_fn = data_list[1]
+    tags = data_list[3]
+    budget = data_list[4]
+    description = data_list[6]
+    url = data_list[7]
 
     # Craft the thread msg
-    thread_msg_text = f"""*Tag* : {tag}\n*Descriptions*: {description}\n*URl*: {url}"""
+    thread_msg_text = f"""*Tags* : {tags}\n*Client First Name*: {client_fn}\n*Descriptions*: {description}\n*URl*: {url}"""
 
     # Send the main msg and thread msg
     msg_response = slack_notification(channel=channel_name, msg_text=budget)

@@ -13,7 +13,7 @@ from functions import open_worksheet
 from functions_slack import slack_notification
 from import_secrets import *
 from requests_functions import get_io_jobs
-from requests_functions import show_request_data_to_slack
+from requests_functions import send_requests_to_slack
 
 
 def requests_main_script():
@@ -37,17 +37,17 @@ def requests_main_script():
                     # Check if sheet has data or not to initialize dataframe properly
                     if len(req_sh_data) > 0:
                         # Has Existing Data
-                        existing_req_df = pd.DataFrame(req_sh_data[1:], columns=req_sh_cols)
+                        existing_req_df = pd.DataFrame(columns=req_sh_cols, data=req_sh_data[1:])
                     else:
                         # No Existing Data, Start a New Dataframe
-                        existing_req_df = pd.DataFrame([], columns=req_sh_cols)
+                        existing_req_df = pd.DataFrame(columns=req_sh_cols, data=[])
 
                     # Get job-requests from first two Pages of Inbox
                     logging.info(f"[Requests]: Getting Bids, Page Limit: {page_limit}")
                     job_requests = get_io_jobs(driver, page_limit)
 
-                    # Select first 7 columns because 8th Col is for threads which will be added later on
-                    req_sh_cols = req_sh_cols[:7]
+                    # Select first 8 columns because 9th Col is for threads which will be added later on
+                    req_sh_cols = req_sh_cols[:8]
 
                     if len(job_requests) > 0:
                         ext_req_df = pd.DataFrame(job_requests, columns=req_sh_cols)
@@ -55,17 +55,18 @@ def requests_main_script():
                         ext_req_df = pd.DataFrame([], columns=req_sh_cols)
 
                     # Assign Str Datatype for avoiding numeric duplicates.
-                    ext_req_df['name'] = ext_req_df['name'].astype(str)
-                    existing_req_df['name'] = existing_req_df['name'].astype(str)
+                    ext_req_df['project_title'] = ext_req_df['project_title'].astype(str)
+                    existing_req_df['project_title'] = existing_req_df['project_title'].astype(str)
 
                     # Check if there are any new values in the dataset
-                    duplicate_criteria = ['rfp_id', 'name', 'tags', 'pricing', 'description', 'request_url']
+                    duplicate_criteria = ['rfp_id', 'client_first_name', 'project_title', 'tags', 'pricing',
+                                          'description', 'request_url']
                     diff_df = diff_df_by_column(ext_req_df, existing_req_df, 'rfp_id', duplicate_criteria)
                     new_rec_count = str(diff_df.shape[0])
                     logging.info(f"[Requests]: New Unique records found: {new_rec_count}")
 
                     # send the new requests to the requests Slack channel
-                    diff_df = show_request_data_to_slack(diff_df)
+                    diff_df = send_requests_to_slack(diff_df)
 
                     # Format Dataset
                     diff_df_final = diff_df.fillna("")
