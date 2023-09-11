@@ -28,7 +28,6 @@ def resp_slack_notifier():
 
     # Adding Cell addresses for "response_msg_status" and "response_thread_id"
     leads_df = add_spreadsheet_range_column(leads_df, leads_sh_cols, ["response_msg_status", "response_thread_id"])
-    request_channel_id = channel_name_to_id(request_channel_name)
 
     # Filter Out the rows that do not have Slack threads
     logging.info("[Requests Notifier]: Removing Leads without Slack Threads")
@@ -49,12 +48,13 @@ def resp_slack_notifier():
     if unsent_df.shape[0]:
         for unsent_row_vals in tqdm(unsent_rows):
             url = f"https://bubble.io/agency-requests/sent?rfp={unsent_row_vals[0]}"
-            budget = unsent_row_vals[3]
-            created_date = unsent_row_vals[4]
-            thread_timestamp = unsent_row_vals[6]
-            response_date = unsent_row_vals[7]
-            response_body = unsent_row_vals[8]
-            rep_name = unsent_row_vals[9]
+            budget = unsent_row_vals[4]
+            created_date = unsent_row_vals[5]
+            req_thread_ts = unsent_row_vals[7]
+            req_type = unsent_row_vals[8]
+            response_date = unsent_row_vals[9]
+            response_body = unsent_row_vals[10]
+            rep_name = unsent_row_vals[11]
             flag_cell_address = unsent_row_vals[-2]
             response_th_cell_address = unsent_row_vals[-1]
 
@@ -63,26 +63,34 @@ def resp_slack_notifier():
             response_date_time = datetime.strptime(response_date, "%d/%m/%Y, %H:%M:%S")
             total_response_time = response_date_time - created_date_time
 
-            thread_timestamp = get_elapsed_ts(request_channel_id, thread_timestamp)
-            if thread_timestamp:
+            if req_type == "Agency Request":
+                request_channel_id = channel_name_to_id(request_channel_name)
+                req_channel_name = request_channel_name
+            else:
+                request_channel_id = channel_name_to_id(request_channel_direct)
+                req_channel_name = request_channel_direct
+
+
+            req_thread_ts = get_elapsed_ts(request_channel_id, req_thread_ts)
+            if req_thread_ts:
                 # Edit Message in "rfp-leads"
                 updated_slack_message = (f"`Budget:` {budget} | `Rep:` {rep_name} | "
                                          f"`Response Time:` {total_response_time}")
                 edit_slack_message(channel=request_channel_id,
-                                   thread_ts=thread_timestamp,
+                                   thread_ts=req_thread_ts,
                                    updated_text=updated_slack_message)
 
                 # Send Message to "rfp-leads"
                 thread_msg_text = f"""*Response Body* : {response_body}\n*Url*: {url}"""
                 thread_emojis = ["alphabet-white-s", "alphabet-white-e", "alphabet-white-n", "alphabet-white-t",
                                  "alphabet-white-exclamation"]
-                respond_to_slack_message(channel=request_channel_name,
-                                         thread_ts=thread_timestamp,
+                respond_to_slack_message(channel=req_channel_name,
+                                         thread_ts=req_thread_ts,
                                          text=thread_msg_text)
 
                 # React to the Message in "rfp-leads"
                 react_to_slack_message(channel_id=request_channel_id,
-                                       thread_ts=thread_timestamp,
+                                       thread_ts=req_thread_ts,
                                        reactions=thread_emojis)
             else:
                 gs_update_data(sh, flag_cell_address, "Expired Thread")
