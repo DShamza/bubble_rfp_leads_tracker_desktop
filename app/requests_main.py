@@ -75,8 +75,11 @@ def requests_main_script(driver):
                     # Slack Thread
                     if non_etl_row_vals[10] == "Agency Request":
                         non_etl_row_vals[9] = send_req_slack_msg(request_channel_name, rfp_req_results)
-                    else:
+                    elif non_etl_row_vals[10] == "Direct Request":
                         non_etl_row_vals[9] = send_req_slack_msg(request_channel_direct, rfp_req_results)
+                    else:
+                        logging.warning("Request Type is not included, Sending to Agency Request Channel.")
+                        non_etl_row_vals[9] = send_req_slack_msg(request_channel_name, rfp_req_results)
 
                     # Verify if Slack Message is sent
                     if non_etl_row_vals[9]:
