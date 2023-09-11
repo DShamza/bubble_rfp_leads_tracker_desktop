@@ -54,7 +54,8 @@ def new_requests_main_script(driver):
             non_etl_row_vals[4] = rfp_req_results[3]
             # Pricing
             non_etl_row_vals[5] = rfp_req_results[4]
-            # Timestamp Already Inserted
+            # # Timestamp (Already Inserted)
+            # non_etl_row_vals[6] = rfp_req_results[5]
             # Description
             non_etl_row_vals[7] = rfp_req_results[6]
             # Request URL
