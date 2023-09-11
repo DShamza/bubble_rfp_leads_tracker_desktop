@@ -101,8 +101,8 @@ def send_req_slack_msg(channel_name, data_list):
     url = data_list[7]
 
     # Craft the thread msg
-    thread_msg_text = (f"*Tags* : {tags}\n\n*Client First Name*: {client_fn}\n\n"
-                       f"*Descriptions*: {description}\n\n*URl*: {url}")
+    thread_msg_text = (f"*Tags:* {tags}\n\n*Client First Name:* {client_fn}\n\n"
+                       f"*Descriptions*: {description}\n\n*URl:* {url}")
 
     # Send the main msg and thread msg
     msg_response = slack_notification(channel=channel_name, msg_text=budget)
