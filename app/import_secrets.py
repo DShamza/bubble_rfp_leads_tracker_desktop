@@ -15,6 +15,7 @@ slack_messaging = os.environ.get("SLACK_MESSAGING")
 slack_secret = os.environ.get("SLACK_APP_SECRET")
 main_channel_name = os.environ.get("MAIN_SLACK_CHANNEL_NAME")
 request_channel_name = os.environ.get("REQUESTS_SLACK_CHANNEL_NAME")
+request_channel_direct = os.environ.get("REQUESTS_SLACK_CHANNEL_DIRECT")
 response_channel_name = os.environ.get("RESPONSE_SLACK_CHANNEL_NAME")
 
 # GS
