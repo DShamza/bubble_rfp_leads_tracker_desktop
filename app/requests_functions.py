@@ -1,6 +1,5 @@
 # coding: utf-8
 import logging
-from time import sleep
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -25,7 +24,6 @@ def open_req_url(rfp_req_url, driver):
     while True:
         try:
             driver.get(rfp_req_url)
-            sleep(2)
             WebDriverWait(driver, sel_timeout).until(EC.visibility_of_element_located((By.XPATH, req_name_path)))
         except TimeoutException:
             logging.critical("Timeout opening the Request URL", exc_info=True)
