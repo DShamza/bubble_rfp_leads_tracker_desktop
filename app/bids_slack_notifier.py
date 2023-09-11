@@ -120,20 +120,20 @@ def resp_slack_notifier():
 
 def exec_resp_slack_notifier():
     logging.info("[Requests Notifier]: Starting Response Slack Notifier")
-    slack_notification(channel=main_channel_name,
+    slack_notification(channel=alerts_channel_name,
                        msg_text=":grey_exclamation: RFP Response Slack Notifier Started! :rocket:")
     while True:
         try:
             resp_slack_notifier()
         except Exception as e:
             logging.info(f"[Requests Notifier]: RFP Response Slack Notifier is Down,  Error: {e}")
-            slack_notification(channel=main_channel_name,
+            slack_notification(channel=alerts_channel_name,
                                msg_text=":grey_exclamation: :x: RFP Response Slack Notifier is Down :x:",
                                exception_trace=e)
             break
 
     devtracker_sleep(30, 60)
-    slack_notification(channel=main_channel_name,
+    slack_notification(channel=alerts_channel_name,
                        msg_text=":grey_exclamation: :recycle: Restarting RFP Response Slack Notifier :recycle:")
     exec_resp_slack_notifier()
 

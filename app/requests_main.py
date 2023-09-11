@@ -1,101 +1,111 @@
 # coding: utf-8
 import logging
-
 import pandas as pd
+from tqdm import tqdm
 
-from functions import bubbleio_login
-from functions import devtracker_sleep
-from functions import diff_df_by_column
-from functions import get_driver
-from functions import gs_get_data
-from functions import gs_insert_data
-from functions import open_worksheet
-from functions_slack import slack_notification
 from import_secrets import *
-from requests_functions import get_io_jobs
-from requests_functions import send_requests_to_slack
+from functions import gs_update_data
+from functions import open_worksheet
+from functions import gs_get_data
+from functions import devtracker_sleep
+from functions import column_index_to_alphabet
+from functions import get_driver
+from functions import bubbleio_login
+from functions_slack import slack_notification
+from requests_functions import get_rfp_request
+from requests_functions import send_req_slack_msg
 
 
-def requests_main_script():
-    logging.info("[Requests]: Starting Bubbleio Dev Monitor Tool")
-    slack_notification(channel=main_channel_name,
+def requests_main_script(driver):
+    # Creating a dataframe from Leads Sheet
+    logging.info("Opening New Requests Sheet")
+    sh = open_worksheet(req_sheet_name)
+    req_sh_data = gs_get_data(sh)
+    req_sh_cols = req_sh_data[0]
+    req_df = pd.DataFrame(req_sh_data[1:], columns=req_sh_cols)
+
+    # Assign a range column to the DataFrame
+    req_df['Range'] = [f"A{i + 2}:{column_index_to_alphabet(len(req_df.columns))}{i + 2}" for i in range(len(req_df))]
+
+    # Filter out the rows for which the Slack Message has already been sent.
+    logging.info("Removing threads for which the message has already been sent.")
+    non_etl_df = req_df.loc[req_df['etl_status'] != 'Y']
+    logging.info("[ETL] Rows, Columns:")
+    logging.info(non_etl_df.shape)
+
+    # Extracting Data for Non-ETL Requests
+    non_etl_rows = non_etl_df.values.tolist()
+
+    if non_etl_df.shape[0]:
+        for non_etl_row_vals in tqdm(non_etl_rows):
+            logging.info(non_etl_row_vals)
+            # Get RFP_Request Data
+            email_req_url = non_etl_row_vals[0]
+            rfp_req_results = get_rfp_request(email_req_url, driver)
+            logging.info(rfp_req_results)
+
+            # RFP ID
+            non_etl_row_vals[1] = rfp_req_results[0]
+            # Client First Name
+            non_etl_row_vals[2] = rfp_req_results[1]
+            # Project Title
+            non_etl_row_vals[3] = rfp_req_results[2]
+            # Tags
+            non_etl_row_vals[4] = rfp_req_results[3]
+            # Pricing
+            non_etl_row_vals[5] = rfp_req_results[4]
+            # # Timestamp (Already Inserted)
+            # non_etl_row_vals[6] = rfp_req_results[5]
+            # Description
+            non_etl_row_vals[7] = rfp_req_results[6]
+            # Request URL
+            non_etl_row_vals[8] = rfp_req_results[7]
+            # Slack Thread
+            if non_etl_row_vals[10] == "Agency Request":
+                non_etl_row_vals[9] = send_req_slack_msg(request_channel_name, rfp_req_results)
+            else:
+                non_etl_row_vals[9] = send_req_slack_msg(request_channel_direct, rfp_req_results)
+
+            # Verify if Slack Message is sent
+            if non_etl_row_vals[9]:
+                non_etl_row_vals[-2] = "Y"
+                # Update Google Sheets
+                row_index = non_etl_row_vals[-1]
+                gs_update_data(sh, row_index, [non_etl_row_vals[:-1]])
+                devtracker_sleep(1, 2)
+
+
+def exec_new_req_main_script():
+    logging.info("[Script Log | Requests]: Starting Bubbleio Dev Monitor Tool")
+    slack_notification(channel=alerts_channel_name,
                        msg_text=":incoming_envelope: RFP Requests Script Started! :rocket:")
-    # Setting the number of pages from which script can get requests
-    page_limit = 1
+    driver = get_driver()
 
-    try:
-        # Check Login & Get apps to track
-        driver = get_driver()
-        is_logged_in = bubbleio_login(driver)
-        if is_logged_in:
-            while True:
-                try:
-                    sh = open_worksheet(req_sheet_name)
-                    req_sh_data = gs_get_data(sh)
-                    req_sh_cols = req_sh_data[0]
-                    logging.info(f"[Requests]: Old records: {str(len(req_sh_data))}")
-                    # Check if sheet has data or not to initialize dataframe properly
-                    if len(req_sh_data) > 0:
-                        # Has Existing Data
-                        existing_req_df = pd.DataFrame(columns=req_sh_cols, data=req_sh_data[1:])
-                    else:
-                        # No Existing Data, Start a New Dataframe
-                        existing_req_df = pd.DataFrame(columns=req_sh_cols, data=[])
-
-                    # Get job-requests from first two Pages of Inbox
-                    logging.info(f"[Requests]: Getting Bids, Page Limit: {page_limit}")
-                    job_requests = get_io_jobs(driver, page_limit)
-
-                    # Select first 8 columns because 9th Col is for threads which will be added later on
-                    req_sh_cols = req_sh_cols[:8]
-
-                    if len(job_requests) > 0:
-                        ext_req_df = pd.DataFrame(job_requests, columns=req_sh_cols)
-                    else:
-                        ext_req_df = pd.DataFrame([], columns=req_sh_cols)
-
-                    # Assign Str Datatype for avoiding numeric duplicates.
-                    ext_req_df['project_title'] = ext_req_df['project_title'].astype(str)
-                    existing_req_df['project_title'] = existing_req_df['project_title'].astype(str)
-
-                    # Check if there are any new values in the dataset
-                    duplicate_criteria = ['rfp_id', 'client_first_name', 'project_title', 'tags', 'pricing',
-                                          'description', 'request_url']
-                    diff_df = diff_df_by_column(ext_req_df, existing_req_df, 'rfp_id', duplicate_criteria)
-                    new_rec_count = str(diff_df.shape[0])
-                    logging.info(f"[Requests]: New Unique records found: {new_rec_count}")
-
-                    # send the new requests to the requests Slack channel
-                    diff_df = send_requests_to_slack(diff_df)
-
-                    # Format Dataset
-                    diff_df_final = diff_df.fillna("")
-                    gs_insert_data(sh, diff_df_final.values.tolist())
-                    logging.info(f"[Requests]: [GS SAVE DATA] Data Saved!")
-                    devtracker_sleep(10, 15)
-                except Exception as e:
-                    logging.info(f"[Requests]: RFP Request Tracker is Down,  Error: {e}")
-                    slack_notification(channel=main_channel_name,
-                                       msg_text=":incoming_envelope: :x: RFP Request Tracker is Down :x:",
-                                       exception_trace=e)
-                    break
-        # Quiting Driver & Restarting
+    while True:
         try:
-            driver.quit()
-            logging.info(f"[Requests]: Closing Driver")
+
+            is_logged_in = bubbleio_login(driver)
+            if is_logged_in:
+                requests_main_script(driver)
         except Exception as e:
-            logging.warning(f"[Requests]: Driver is already closed {e}")
+            logging.info(f"[Script Log | Requests]: RFP Request Tracker is Down,  Error: {e}")
+            slack_notification(channel=alerts_channel_name,
+                               msg_text=":incoming_envelope: :x: RFP Request Tracker is Down :x:",
+                               exception_trace=e)
+            break
+
+    # Quiting Driver & Restarting
+    try:
+        driver.quit()
+        logging.info(f"[Script Log | Requests]: Closing Driver")
     except Exception as e:
-        logging.critical(f"[Requests]: RFP Request Tracker is Down,  Error: {e}")
-        slack_notification(channel=main_channel_name,
-                           msg_text=":incoming_envelope: :x: RFP Request Tracker is Down :x:",
-                           exception_trace=e)
+        logging.info(f"[Script Log | Requests]: Driver is already closed {e}")
 
     devtracker_sleep(30, 60)
-    slack_notification(channel=main_channel_name,
+    slack_notification(channel=alerts_channel_name,
                        msg_text=":incoming_envelope: :recycle: Restarting RFP Requests Tracker :recycle:")
-    requests_main_script()
+    exec_new_req_main_script()
 
 
 if __name__ == '__main__':
-    requests_main_script()
+    exec_new_req_main_script()

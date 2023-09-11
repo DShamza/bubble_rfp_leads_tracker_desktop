@@ -268,13 +268,13 @@ def gs_insert_data(sh, bubble_data):
             logging.critical(f"[Functions]: [GS Insert Data] Error Message: {e}")
             if error_count % 10 == 0:
                 slack_notification(
-                    channel=main_channel_name,
+                    channel=alerts_channel_name,
                     msg_text=":rotating_light: Error while inserting data rows to google sheets :rotating_light:",
                     exception_trace=e,
                 )
                 if error_count % 50 == 0:
                     slack_notification(
-                        channel=main_channel_name,
+                        channel=alerts_channel_name,
                         msg_text=":rotating_light: Bids and Requests Tracker is down! :rotating_light:",
                         exception_trace=e,
                     )
@@ -297,14 +297,14 @@ def gs_update_data(sh, sh_range, data):
             logging.critical(f"[Functions]: [GS Update Data]: {e}")
             if error_count % 10 == 0:
                 slack_notification(
-                    channel=main_channel_name,
+                    channel=alerts_channel_name,
                     msg_text=":rotating_light: Error Updating Response Message Status & "
                              "Response Thread_ID to Google Sheets:rotating_light:",
                     exception_trace=e,
                 )
                 if error_count % 50 == 0:
                     slack_notification(
-                        channel=main_channel_name,
+                        channel=alerts_channel_name,
                         msg_text=":rotating_light: RFP Response Slack " "Notifier is down! :rotating_light:",
                         exception_trace=e,
                     )

@@ -1,7 +1,6 @@
 # coding: utf-8
 import logging
-import pandas as pd
-from tqdm import tqdm
+from time import sleep
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -10,7 +9,6 @@ from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import InvalidSessionIdException
 from selenium.webdriver.support import expected_conditions as EC
 
-from import_secrets import *
 from functions import limit_string
 from functions import extract_dates
 from functions import devtracker_sleep
@@ -18,104 +16,54 @@ from functions_slack import slack_notification
 from functions_slack import respond_to_slack_message
 
 # Browser Settings
-sel_timeout = 20
+sel_timeout = 60
 
 
-def get_io_jobs(driver, page_limit):
-    """Scrapes job requests from Bubbleio job requests page
-
-    Args:
-        driver (webdriver): selenium webdriver object
-
-    Returns:
-        data[][]: an array of all scrapped job requests
-        :param driver:
-        :param page_limit:
-    """
-    logging.info(f"[Requests]: Opening Job Request Page")
+def open_req_url(rfp_req_url, driver):
     retry_count = 0
-    pages_scrapped = 0
-    requests_url = f"https://bubble.io/agency-requests/inbox"
-    driver.get(requests_url)
-    devtracker_sleep(10, 15)
-
-    # Get Total Number of Requests
-    request_count_path = "//*[@class='bubble-element Text cnaBaAaD3']"
-    request_count = driver.find_element(By.XPATH, request_count_path).text
-
-    job_all_boxes_path = "//div[contains(@class, 'cnaBaCh3')]"
-    job_boxes_ind_path = "(//div[contains(@class, 'cnaBaCh3')])[{}]"
-
-    logging.info(f"[Requests]: {request_count}")
-
-    job_list = []
+    req_name_path = "//*[contains(@class, 'cnaBaVaB8')]"
     while True:
         try:
-            if pages_scrapped > page_limit - 1:
-                break
-            logging.info(f'[Requests]: ==========Get Page {pages_scrapped + 1}/{page_limit}===========')
-            WebDriverWait(driver, sel_timeout).until(EC.visibility_of_element_located((By.XPATH, job_all_boxes_path)))
-            job_containers_count = len(driver.find_elements(By.XPATH, job_all_boxes_path))
-            for job_index in tqdm(range(job_containers_count)):
-                current_job_path = job_boxes_ind_path.format(str(job_index + 1))
-                job_details = get_job(current_job_path, driver)
-                job_list.append(job_details)
-                logging.info(f"[Requests]: Current App Name: {job_details[1]} | RFP_ID: {job_details[0]}")
-
-            forward_btn = driver.find_element(By.XPATH, "//button[text()='arrow_forward']")
-            requests_pagination = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaDaU3')]")
-            # If no limit applied go till the last page
-            if requests_pagination:
-                logging.info(f"[Requests]: Currently at page: {requests_pagination.text}")
-                requests_pagination = requests_pagination.text.split("  ")
-                if not forward_btn or int(requests_pagination[0]) == int(requests_pagination[-1]):
-                    break
-
-            driver.execute_script("arguments[0].click();", forward_btn)
-            devtracker_sleep(4, 6)
-            pages_scrapped = pages_scrapped + 1
+            driver.get(rfp_req_url)
+            sleep(2)
+            WebDriverWait(driver, sel_timeout).until(EC.visibility_of_element_located((By.XPATH, req_name_path)))
         except TimeoutException:
-            logging.critical("[Requests]: Website Didn't Load, retrying!", exc_info=True)
-            if retry_count > 3:
-                break
-            retry_count = retry_count + 1
-            # logging.info(driver.page_source)
-            devtracker_sleep(5, 10)
-
-    return job_list
-
-
-def get_job(job_elem, driver):
-    # logging.info(job_elem.click())
-    while True:
-        try:
-            element = driver.find_element(By.XPATH, job_elem)
-            element.click()
-            break
+            logging.critical("Timeout opening the Request URL", exc_info=True)
+            if driver.find_element(By.XPATH, "//*[text()='Job request inbox']"):
+                if retry_count >= 10:
+                    logging.warning("Invalid Request")
+                    return ["", "", "", "Invalid Request Link", "", "Invalid Request Link", rfp_req_url]
+                else:
+                    retry_count += 1
+                    logging.error(f"Retry # {retry_count} Something Went Wrong, Retrying...")
+            else:
+                logging.error("Something Went Wrong, Retrying")
+                continue
         except Exception as e:
             if isinstance(e, InvalidSessionIdException):
                 raise InvalidSessionIdException
             if isinstance(e, WebDriverException):
                 raise WebDriverException
             else:
-                logging.critical("[Requests]: Exception while trying to click, retrying!")
-                logging.critical(f"[Requests]: Error Message {e}")
+                logging.critical("[Script Log | Requests]: Exception while trying to click, retrying!")
+                logging.critical(f"[Script Log | Requests]: Error Message {e}")
                 devtracker_sleep(1, 2)
                 continue
+        break
     devtracker_sleep(1, 2)
 
-    # Switch to new Tab as clicking on a request will open it in a new tab
-    driver.switch_to.window(driver.window_handles[-1])
 
-    # Check if the Request Page is opened & Get Data
+def get_rfp_request(rfp_req_url, driver):
+    # Open Req_URL
+    open_req_url(rfp_req_url, driver)
+
     # Extract Project Title
     proj_title_path = "//*[contains(@class, 'cnaBaVaB8')]"
-    WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, proj_title_path)))
     proj_title = str(driver.find_element(By.XPATH, proj_title_path).text).strip()
 
     # Extract Client First Name
     f_name_path = "//*[text()='First name']/following-sibling::div[1]"
-    f_name = str(driver.find_element(By.XPATH, f_name_path).text).strip()
+    client_first_name = str(driver.find_element(By.XPATH, f_name_path).text).strip()
 
     # Extract Tags
     tags = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaVaR8')]").text
@@ -124,8 +72,8 @@ def get_job(job_elem, driver):
     pricing = driver.find_element(By.XPATH, "//*[contains(@class, 'cnaBaVaU8')]").text
 
     # Extract Request Date
-    request_date = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaVaF8')]").text
-    request_date = extract_dates(request_date)
+    req_created_date = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaVaF8')]").text
+    req_created_date = extract_dates(req_created_date)
 
     # Extract Request Description
     description_char_limit = 50000
@@ -138,34 +86,7 @@ def get_job(job_elem, driver):
     # Extract the Rfp_id
     rfp_id = str(request_url.split("=")[-1])
 
-    # close the new tab
-    driver.close()
-
-    # Switch Back
-    driver.switch_to.window(driver.window_handles[0])
-    return [rfp_id, f_name, proj_title, tags, pricing, request_date, description, request_url]
-
-
-def send_requests_to_slack(slack_data_df):
-    """
-        iterate each new request.
-        send the Slack notification against each request.
-        and return the time stamp of each request msg to save it in the Google sheet.
-        :return:
-    """
-
-    slack_data = slack_data_df.values.tolist()
-    if int(slack_data_df.shape[0]) == 0:
-        return slack_data_df
-    else:
-        for i in tqdm(slack_data):
-            time_stamp = send_req_slack_msg(request_channel_name, i)
-            i.append(time_stamp)
-
-        thread_df = pd.DataFrame(slack_data,
-                                 columns=['rfp_id', 'client_first_name', 'project_title', 'tags', 'pricing',
-                                          'created_date', 'description', 'request_url', 'slack_thread_id'])
-        return thread_df
+    return [rfp_id, client_first_name, proj_title, tags, pricing, req_created_date, description, request_url]
 
 
 def send_req_slack_msg(channel_name, data_list):
@@ -180,7 +101,8 @@ def send_req_slack_msg(channel_name, data_list):
     url = data_list[7]
 
     # Craft the thread msg
-    thread_msg_text = f"""*Tags* : {tags}\n*Client First Name*: {client_fn}\n*Descriptions*: {description}\n*URl*: {url}"""
+    thread_msg_text = (f"*Tags:* {tags}\n\n*Client First Name:* {client_fn}\n\n"
+                       f"*Descriptions*: {description}\n\n*URl:* {url}")
 
     # Send the main msg and thread msg
     msg_response = slack_notification(channel=channel_name, msg_text=budget)

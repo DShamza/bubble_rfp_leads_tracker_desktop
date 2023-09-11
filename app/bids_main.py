@@ -17,7 +17,7 @@ from import_secrets import *
 
 def bids_main_script():
     logging.info("[Bids]: Starting Bubbleio Dev Monitor Tool")
-    slack_notification(channel=main_channel_name, msg_text=":outbox_tray: RFP Bids Script Started!  :rocket:")
+    slack_notification(channel=alerts_channel_name, msg_text=":outbox_tray: RFP Bids Script Started!  :rocket:")
     # Setting the number of pages from which script can get bids
     page_limit = 1
 
@@ -62,7 +62,7 @@ def bids_main_script():
 
                 except Exception as e:
                     logging.info(f"[Bids]: RFP Bids Tracker is down: {e}")
-                    slack_notification(channel=main_channel_name,
+                    slack_notification(channel=alerts_channel_name,
                                        msg_text=":outbox_tray: :x: RFP Bids Tracker is down. :x:", exception_trace=e)
                     break
 
@@ -74,12 +74,12 @@ def bids_main_script():
             logging.warning(f"[Bids]: Driver is already closed {e}")
     except Exception as e:
         logging.critical(f"[Bids]: RFP Bids Tracker is down: {e}")
-        slack_notification(channel=main_channel_name,
+        slack_notification(channel=alerts_channel_name,
                            msg_text=":outbox_tray: :x: RFP Bids Tracker is down. :x:", exception_trace=e)
 
     # Restarting
     devtracker_sleep(30, 60)
-    slack_notification(channel=main_channel_name,
+    slack_notification(channel=alerts_channel_name,
                        msg_text=":outbox_tray: :recycle: Restarting RFP Bids Tracker. :recycle:")
     bids_main_script()
 
