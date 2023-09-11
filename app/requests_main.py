@@ -93,7 +93,7 @@ def requests_main_script(driver):
     else:
         logging.warning("[Script Log | Requests]: No New Requests Found")
     logging.info("[Script Log | Requests]: Iteration complete, Requests Script is Restarting...")
-    devtracker_sleep(10, 15)
+    devtracker_sleep(20, 20)
 
 
 def exec_req_main_script():
