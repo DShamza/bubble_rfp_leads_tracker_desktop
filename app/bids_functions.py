@@ -8,6 +8,7 @@ from functions import devtracker_sleep
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import InvalidSessionIdException
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -138,13 +139,19 @@ def get_bid(job_elem, driver):
 
     # Extract Rep
     rep_path = "(//div[contains(@class, 'cnaBaWc8')]//u)[last()]"
-    rep_name = driver.find_element(By.XPATH, rep_path).text
-    rep_name = rep_name.split("|")[0].strip()
+    try:
+        rep_name = driver.find_element(By.XPATH, rep_path).text
+        rep_name = rep_name.split("|")[0].strip()
+    except NoSuchElementException:
+        rep_name = "Not Signed | Needs Attention"
 
     # Extract Rep calendly
-    rep_calendly_path = "//a[contains(@href, 'calendly.com')]"
-    rep_calendly_link = driver.find_element(By.XPATH, rep_calendly_path)
-    rep_calendly_link = rep_calendly_link.get_attribute("href")
+    try:
+        rep_calendly_path = "//a[contains(@href, 'calendly.com')]"
+        rep_calendly_link = driver.find_element(By.XPATH, rep_calendly_path)
+        rep_calendly_link = rep_calendly_link.get_attribute("href")
+    except NoSuchElementException:
+        rep_calendly_link = "Calendly Link Not Included | Needs Attention"
 
     # Extract Current URL
     bid_url = driver.current_url
