@@ -13,9 +13,10 @@ password = os.environ.get("PASS")
 # Slack
 slack_messaging = os.environ.get("SLACK_MESSAGING")
 slack_secret = os.environ.get("SLACK_APP_SECRET")
-main_channel_name = os.environ.get("MAIN_SLACK_CHANNEL_NAME")
-request_channel_name = os.environ.get("REQUESTS_SLACK_CHANNEL_NAME")
-response_channel_name = os.environ.get("RESPONSE_SLACK_CHANNEL_NAME")
+alerts_channel_name = os.environ.get("ALERTS_SLACK_CH_NAME")
+request_channel_name = os.environ.get("AGENCY_REQS_SLACK_CH_NAME")
+request_channel_direct = os.environ.get("DIRECT_REQS_SLACK_CH_NAME")
+response_channel_name = os.environ.get("RESPONSE_SLACK_CH_NAME")
 
 # GS
 spreadsheet_id = os.environ.get("SPREADSHEET_ID")

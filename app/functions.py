@@ -268,13 +268,13 @@ def gs_insert_data(sh, bubble_data):
             logging.critical(f"[Functions]: [GS Insert Data] Error Message: {e}")
             if error_count % 10 == 0:
                 slack_notification(
-                    channel=main_channel_name,
+                    channel=alerts_channel_name,
                     msg_text=":rotating_light: Error while inserting data rows to google sheets :rotating_light:",
                     exception_trace=e,
                 )
                 if error_count % 50 == 0:
                     slack_notification(
-                        channel=main_channel_name,
+                        channel=alerts_channel_name,
                         msg_text=":rotating_light: Bids and Requests Tracker is down! :rotating_light:",
                         exception_trace=e,
                     )
@@ -297,14 +297,14 @@ def gs_update_data(sh, sh_range, data):
             logging.critical(f"[Functions]: [GS Update Data]: {e}")
             if error_count % 10 == 0:
                 slack_notification(
-                    channel=main_channel_name,
+                    channel=alerts_channel_name,
                     msg_text=":rotating_light: Error Updating Response Message Status & "
                              "Response Thread_ID to Google Sheets:rotating_light:",
                     exception_trace=e,
                 )
                 if error_count % 50 == 0:
                     slack_notification(
-                        channel=main_channel_name,
+                        channel=alerts_channel_name,
                         msg_text=":rotating_light: RFP Response Slack " "Notifier is down! :rotating_light:",
                         exception_trace=e,
                     )
@@ -319,11 +319,16 @@ def diff_df_by_column(df_new, df_old, column_name, duplicate_criteria):
     Returns a new DataFrame containing the rows that are present in df_new but not in df_old,
     based on the specified column name.
 
-    :param df_new:
-    :param df_old:
-    :param column_name:
-    :param duplicate_criteria:
-    :return:
+    :param df_new: Dataframe
+        The new DataFrame to compare against the old DataFrame.
+    :param df_old: Dataframe
+        The old DataFrame to compare against.
+    :param column_name: str
+        The name of the column used as the basis for comparison.
+    :param duplicate_criteria: list of str
+        A list of column names to consider when removing duplicates from both DataFrames.
+    :return: DataFrame
+        A new DataFrame containing rows from df_new that are not present in df_old.
     """
     df_new = df_new.drop_duplicates(subset=duplicate_criteria)
     df_old = df_old.drop_duplicates(subset=duplicate_criteria)

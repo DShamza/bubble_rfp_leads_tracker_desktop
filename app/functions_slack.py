@@ -74,7 +74,8 @@ def respond_to_slack_message(channel, thread_ts, text, msg_blocks=None):
             channel=channel,
             thread_ts=thread_ts,
             text=text,
-            blocks=msg_blocks
+            blocks=msg_blocks,
+            unfurl_links=False
         )
         if response["ok"]:
             logging.info(f"[Slack Functions]: Message sent successfully.")

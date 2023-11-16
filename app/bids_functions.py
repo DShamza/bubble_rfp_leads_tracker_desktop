@@ -8,6 +8,7 @@ from functions import devtracker_sleep
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import InvalidSessionIdException
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -33,9 +34,9 @@ def get_io_bids(driver, page_limit):
     bids_url = f"https://bubble.io/agency-requests/sent"
     driver.get(bids_url)
     # check for total Bids
-    total_bids_path = "//div[@class='bubble-element Text cnaBaJp3']"
-    total_bids = driver.find_element(By.XPATH, total_bids_path).text
-    logging.info(f"[Bids]: Total Request: {total_bids}")
+    bids_count_path = "//*[@class='bubble-element Text cnaBaJp3']"
+    total_bids_count = driver.find_element(By.XPATH, bids_count_path).text
+    logging.info(f"[Bids]: Total Request: {total_bids_count}")
     devtracker_sleep(10, 15)
 
     # Get Bids
@@ -61,13 +62,13 @@ def get_io_bids(driver, page_limit):
 
             # Paginate by finding forward arrow icon
             forward_btn = driver.find_element(By.XPATH, "//button[text()='arrow_forward']")
-            pages = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaLaA3')]")
+            bids_pagination = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaBaLaA3')]")
 
             # If no limit applied go till the last page
-            if pages:
-                logging.info(f"[Requests]: Currently at page: {pages.text}")
-                pages = pages.text.split("  ")
-                if not forward_btn or int(pages[0]) == int(pages[-1]):
+            if bids_pagination:
+                logging.info(f"[Requests]: Currently at page: {bids_pagination.text}")
+                bids_pagination = bids_pagination.text.split("  ")
+                if not forward_btn or int(bids_pagination[0]) == int(bids_pagination[-1]):
                     break
 
             driver.execute_script("arguments[0].click();", forward_btn)
@@ -121,7 +122,7 @@ def get_bid(job_elem, driver):
 
     # Check if the Bid is opened & Get Data
     # Extract Name
-    name_path = "//div[contains(@class, 'cnaBaVaB8')]"
+    name_path = "//*[contains(@class, 'cnaBaVaB8')]"
     WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, name_path)))
     name = str(driver.find_element(By.XPATH, name_path).text).strip()
 
@@ -138,13 +139,19 @@ def get_bid(job_elem, driver):
 
     # Extract Rep
     rep_path = "(//div[contains(@class, 'cnaBaWc8')]//u)[last()]"
-    rep_name = driver.find_element(By.XPATH, rep_path).text
-    rep_name = rep_name.split("|")[0].strip()
+    try:
+        rep_name = driver.find_element(By.XPATH, rep_path).text
+        rep_name = rep_name.split("|")[0].strip()
+    except NoSuchElementException:
+        rep_name = "Not Signed | Needs Attention"
 
     # Extract Rep calendly
-    rep_calendly_path = "//a[contains(@href, 'calendly.com')]"
-    rep_calendly_link = driver.find_element(By.XPATH, rep_calendly_path)
-    rep_calendly_link = rep_calendly_link.get_attribute("href")
+    try:
+        rep_calendly_path = "//a[contains(@href, 'calendly.com')]"
+        rep_calendly_link = driver.find_element(By.XPATH, rep_calendly_path)
+        rep_calendly_link = rep_calendly_link.get_attribute("href")
+    except NoSuchElementException:
+        rep_calendly_link = "Calendly Link Not Included | Needs Attention"
 
     # Extract Current URL
     bid_url = driver.current_url
