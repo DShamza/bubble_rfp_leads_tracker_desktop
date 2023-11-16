@@ -70,7 +70,6 @@ def resp_slack_notifier():
                 request_channel_id = channel_name_to_id(request_channel_direct)
                 req_channel_name = request_channel_direct
 
-
             req_thread_ts = get_elapsed_ts(request_channel_id, req_thread_ts)
             if req_thread_ts:
                 # Edit Message in "rfp-leads"
@@ -98,15 +97,14 @@ def resp_slack_notifier():
 
             # Send Message to "rfp-response-time"
             # Craft Message and Message Thread
-            # main_body_msg = f"""*Budget* : {budget}\n*Time to response*: {total_response_time} hours"""
-            main_body_msg = f"`Budget:` {budget} | `Rep:` {rep_name} | `Response Time:` {total_response_time}"
+            main_body_msg = f"`Budget:` {budget} | `Request Type:` {req_type} | `Rep:` {rep_name} | `Response Time:` {total_response_time}"
             thread_msg_text = f"""*Response Body* : {response_body}\n*Url*: {url}"""
 
-            # Send the Message Main Body
+            # Send the Message Main Body to the Response Channel
             msg_response = slack_notification(channel=response_channel_name, msg_text=main_body_msg)
             gs_update_data(sh, response_th_cell_address, msg_response)
 
-            # Send the Response.
+            # Send Message to the Response Channel
             respond_to_slack_message(channel=response_channel_name, text=thread_msg_text, thread_ts=msg_response)
 
             # Add a "Y" to flag that a message has been sent for this lead
