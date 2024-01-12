@@ -69,9 +69,9 @@ def get_driver():
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.set_capability("detach", True)
 
-    # # Browser Cache
-    # chrome_prof_path = os.path.abspath("account_data/Selenium")
-    # chrome_options.add_argument("user-data-dir=" + chrome_prof_path)
+    # Browser Cache
+    chrome_prof_path = os.path.abspath("account_data/Selenium")
+    chrome_options.add_argument("user-data-dir=" + chrome_prof_path)
 
     # Experimental Features
     prefs = {"profile.managed_default_content_settings.images": 2}
