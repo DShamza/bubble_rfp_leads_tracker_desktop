@@ -91,7 +91,7 @@ def get_io_bids(driver, page_limit):
     return job_list
 
 
-def find_match_re(text):
+def get_rep_name_regex(text):
     """
     Finds sequences of uppercase words separated by abnormal spacing and '|'.
 
@@ -101,6 +101,7 @@ def find_match_re(text):
     Returns:
     - list: Matched sequences.
     """
+    # Regex pattern for finding sequences of uppercase words separated by abnormal spacing and '|'
     pattern_abnormal_spacing = r'\b([A-Z]+(?:\s+[A-Z]+)*\s*\|\s*[A-Z]+(?:\s+[A-Z]+)*)\b'
     matches = re.findall(pattern_abnormal_spacing, text, re.MULTILINE)
     return matches
@@ -120,7 +121,7 @@ def has_matches(input_string, string_list):
     return any(substring in input_string for substring in string_list)
 
 
-def get_rep_sel(driver):
+def get_rep_name_sel(driver):
     """
     Retrieves the representative's name from a web page using Selenium WebDriver.
 
@@ -136,6 +137,7 @@ def get_rep_sel(driver):
         rep_path = "(//div[contains(@class, 'cnaBaWc8')]//u)[last()]"
         rep_name = driver.find_element(By.XPATH, rep_path).text.split("|")[0].strip()
 
+        # List of expected responses
         expected_responses = ['Rapid Dev Contributor Profile', 'Andrew Woodard', 'FINN KACZMAROWSKI', 'HAILEY HUSFELT',
                               'MATT GRAHAM', 'ANDREW WOODARD', 'BAZ FILMER', 'JOHN GEMMA', 'JACOB KAPLAN', 'MATT POLIO']
 
@@ -148,7 +150,7 @@ def get_rep_sel(driver):
     return rep_name
 
 
-def get_rep(driver, resp_txt):
+def get_rep_name(driver, resp_txt):
     """
     Extracts the representative's name from response text or fetches it from Selenium WebDriver.
 
@@ -162,11 +164,14 @@ def get_rep(driver, resp_txt):
     If the name is found in the response text, it is extracted and returned.
     Otherwise, the name is obtained using the provided Selenium WebDriver instance.
     """
-    rep_matches = find_match_re(resp_txt)
+    rep_matches = get_rep_name_regex(resp_txt)
+
     if rep_matches:
+        # Extract the first match and strip any leading/trailing spaces or '|'
         rep_name = rep_matches[0].strip().split("|")[0].strip()
     else:
-        rep_name = get_rep_sel(driver)
+        rep_name = get_rep_name_sel(driver)
+
     return rep_name
 
 
@@ -218,7 +223,7 @@ def get_bid(job_elem, driver):
     limited_response = limit_string(s=response_text, max_chars=response_char_limit)
 
     # Extract Rep
-    rep_name = get_rep(driver, response_text)
+    rep_name = get_rep_name(driver, response_text)
 
     # Extract Rep calendly
     try:
