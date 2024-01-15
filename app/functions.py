@@ -406,15 +406,15 @@ def add_spreadsheet_range_column(df, columns, columns_to_find):
     return df
 
 
-def limit_string(s, max_chars):
+def limit_string(input_string, max_chars):
     """
     Truncates the input string to a maximum number of characters.
 
     Args:
-        s (str): The input string to be limited.
+        input_string (str): The input string to be limited.
         max_chars (int): The maximum number of characters allowed in the output string.
 
     Returns:
-        str: The truncated string with at most `max_chars` characters.
+        str: The truncated string with at most `max_characters` characters.
     """
-    return s[:max_chars]
+    return input_string[:max_chars]
