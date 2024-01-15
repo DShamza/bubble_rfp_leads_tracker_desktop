@@ -220,7 +220,8 @@ def get_bid(job_elem, driver):
     response_char_limit = 50000
     response_path = "//div[contains(@class, 'cnaBaWc8')]"
     response_text = driver.find_element(By.XPATH, response_path).text
-    limited_response = limit_string(s=response_text, max_chars=response_char_limit)
+    # Updating Response for Google Sheets' 50000 Char Limit per Cell
+    gs_response = limit_string(input_string=response_text, max_chars=response_char_limit)
 
     # Extract Rep
     rep_name = get_rep_name(driver, response_text)
@@ -244,4 +245,4 @@ def get_bid(job_elem, driver):
 
     # Switch Back
     driver.switch_to.window(driver.window_handles[0])
-    return [rfp_id, name, response_date, limited_response, bid_url, rep_name, rep_calendly_link]
+    return [rfp_id, name, response_date, gs_response, bid_url, rep_name, rep_calendly_link]
