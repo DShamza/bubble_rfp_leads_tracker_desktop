@@ -8,6 +8,7 @@ import logging
 import datefinder
 from time import sleep
 from datetime import datetime
+from gspread.exceptions import APIError
 
 # Selenium
 from selenium import webdriver
@@ -225,7 +226,7 @@ def open_worksheet(sheet_name):
                 logging.critical(
                     f"[Functions]: Error Message: {e}" f"\nWorkSheet Not available, adding worksheet {sheet_name}"
                 )
-                sh = spreadsheet.add_worksheet(title=sheet_name, rows="100", cols="12", index=0)
+                sh = spreadsheet.add_worksheet(title=sheet_name, rows=100, cols=12, index=0)
 
             if not sh:
                 raise Exception
@@ -242,14 +243,34 @@ def gs_get_data(sh):
     Get Data from a Google WorkSheet.
     :return:
     """
-    try:
-        sheet_data = sh.get_all_values()
-        if not sheet_data:
-            raise Exception
-        else:
-            return sheet_data
-    except Exception as e:
-        logging.critical(f"[Functions]: [GS GET Data] Error Message: {e}", exc_info=True)
+    retries = 0
+    max_retries = 5
+
+    while retries < max_retries:
+        try:
+            logging.info("[Functions]: [GS GET Data] Getting Sheet Data...")
+            sheet_data = sh.get_all_values()
+            if not sheet_data:
+                logging.error("[Functions]: [GS GET Data] Sheet Data Not Found, Raising Error!")
+                raise Exception
+            else:
+                logging.info("[Functions]: [GS GET Data] Sheet Data Found, Continuing!")
+                return sheet_data
+
+        except APIError as gs_api_error:
+            logging.critical("[Functions]: [GS GET Data] Something Went Wrong with the Google Sheets API")
+            gs_status_code = gs_api_error.response.status_code
+            if gs_status_code == 429 or gs_status_code == 503:
+                retries += 1
+                logging.error(f"[Functions]: [GS GET Data] Retry #{retries} Rate Limit Exceeded")
+                logging.error(f"[Functions]: [GS GET Data] Status Code: {gs_status_code}")
+                devtracker_sleep(60, 80)
+            else:
+                logging.critical("[Functions]: [GS GET Data] Something went wrong with the Google Sheets")
+                raise
+
+        except Exception as e:
+            logging.critical(f"[Functions]: [GS GET Data] Error Message: {e}", exc_info=True)
 
     return []
 
@@ -264,6 +285,16 @@ def gs_insert_data(sh, bubble_data):
         try:
             # sh.append_rows(bubble_data, value_input_option="USER_ENTERED", table_range="A1")
             sh.append_rows(bubble_data, value_input_option="RAW", table_range="A1")
+        except APIError as gs_api_error:
+            logging.critical("[Functions]: [GS Insert Data] Unable to insert data in Google Sheets")
+            gs_status_code = gs_api_error.response.status_code
+            if gs_status_code == 429 or gs_status_code == 503:
+                logging.critical(f"Status Code: {gs_status_code}")
+                error_count += 1
+                devtracker_sleep(60, 80)
+            else:
+                logging.critical(f"API Error not handled, Status Code: {gs_status_code}")
+                raise
         except Exception as e:
             logging.critical(f"[Functions]: [GS Insert Data] Error Message: {e}")
             if error_count % 10 == 0:
@@ -375,15 +406,15 @@ def add_spreadsheet_range_column(df, columns, columns_to_find):
     return df
 
 
-def limit_string(s, max_chars):
+def limit_string(input_string, max_chars):
     """
     Truncates the input string to a maximum number of characters.
 
     Args:
-        s (str): The input string to be limited.
+        input_string (str): The input string to be limited.
         max_chars (int): The maximum number of characters allowed in the output string.
 
     Returns:
-        str: The truncated string with at most `max_chars` characters.
+        str: The truncated string with at most `max_characters` characters.
     """
-    return s[:max_chars]
+    return input_string[:max_chars]
