@@ -1,4 +1,5 @@
 # coding: utf-8
+import re
 import logging
 from tqdm import tqdm
 from functions import limit_string
@@ -13,7 +14,7 @@ from selenium.common.exceptions import InvalidSessionIdException
 from selenium.webdriver.support import expected_conditions as EC
 
 # Browser Settings
-sel_timeout = 30
+sel_timeout = 20
 
 
 def get_io_bids(driver, page_limit):
@@ -90,6 +91,90 @@ def get_io_bids(driver, page_limit):
     return job_list
 
 
+def get_rep_name_regex(text):
+    """
+    Finds sequences of uppercase words separated by abnormal spacing and '|'.
+
+    Parameters:
+    - text (str): Input text.
+
+    Returns:
+    - list: Matched sequences.
+    """
+    # Regex pattern for finding sequences of uppercase words separated by abnormal spacing and '|'
+    pattern_abnormal_spacing = r'\b([A-Z]+(?:\s+[A-Z]+)*\s*\|\s*[A-Z]+(?:\s+[A-Z]+)*)\b'
+    matches = re.findall(pattern_abnormal_spacing, text, re.MULTILINE)
+    return matches
+
+
+def has_matches(input_string, string_list):
+    """
+    Check if any element in the list 'string_list' is a substring of the string 'input_string'.
+
+    Args:
+        input_string (str): The input string to check for matches.
+        string_list (list): The list of strings to check for as substrings.
+
+    Returns:
+        bool: True if any substring is found, False otherwise.
+    """
+    return any(substring in input_string for substring in string_list)
+
+
+def get_rep_name_sel(driver):
+    """
+    Retrieves the representative's name from a web page using Selenium WebDriver.
+
+    Parameters:
+    - driver: The Selenium WebDriver instance.
+
+    Returns:
+    - str: The representative's name.
+
+    If the name cannot be found, the function returns "Not Signed | Needs Attention".
+    """
+    try:
+        rep_path = "(//div[contains(@class, 'cnaBaWc8')]//u)[last()]"
+        rep_name = driver.find_element(By.XPATH, rep_path).text.split("|")[0].strip()
+
+        # List of expected responses
+        expected_responses = ['Rapid Dev Contributor Profile', 'Andrew Woodard', 'FINN KACZMAROWSKI', 'HAILEY HUSFELT',
+                              'MATT GRAHAM', 'ANDREW WOODARD', 'BAZ FILMER', 'JOHN GEMMA', 'JACOB KAPLAN', 'MATT POLIO']
+
+        if not has_matches(rep_name, expected_responses):
+            rep_path_2 = "(//div[contains(@class, 'cnaBaWc8')]//*[contains(text(), 'Rapid Dev Contributor Profile | Bubble')])"
+            rep_name = driver.find_element(By.XPATH, rep_path_2).text.split("|")[0].strip()
+    except NoSuchElementException:
+        rep_name = "Not Signed | Needs Attention"
+
+    return rep_name
+
+
+def get_rep_name(driver, resp_txt):
+    """
+    Extracts the representative's name from response text or fetches it from Selenium WebDriver.
+
+    Parameters:
+    - driver: The Selenium WebDriver instance.
+    - resp_txt (str): Response text containing potential representative information.
+
+    Returns:
+    - str: The representative's name.
+
+    If the name is found in the response text, it is extracted and returned.
+    Otherwise, the name is obtained using the provided Selenium WebDriver instance.
+    """
+    rep_matches = get_rep_name_regex(resp_txt)
+
+    if rep_matches:
+        # Extract the first match and strip any leading/trailing spaces or '|'
+        rep_name = rep_matches[0].strip().split("|")[0].strip()
+    else:
+        rep_name = get_rep_name_sel(driver)
+
+    return rep_name
+
+
 def get_bid(job_elem, driver):
     """Get single bid from bid details page
 
@@ -134,16 +219,12 @@ def get_bid(job_elem, driver):
     # Extract Response
     response_char_limit = 50000
     response_path = "//div[contains(@class, 'cnaBaWc8')]"
-    response = driver.find_element(By.XPATH, response_path).text
-    response = limit_string(s=response, max_chars=response_char_limit)
+    response_text = driver.find_element(By.XPATH, response_path).text
+    # Updating Response for Google Sheets' 50000 Char Limit per Cell
+    google_sheet_response = limit_string(input_string=response_text, max_chars=response_char_limit)
 
     # Extract Rep
-    rep_path = "(//div[contains(@class, 'cnaBaWc8')]//u)[last()]"
-    try:
-        rep_name = driver.find_element(By.XPATH, rep_path).text
-        rep_name = rep_name.split("|")[0].strip()
-    except NoSuchElementException:
-        rep_name = "Not Signed | Needs Attention"
+    rep_name = get_rep_name(driver, response_text)
 
     # Extract Rep calendly
     try:
@@ -164,4 +245,4 @@ def get_bid(job_elem, driver):
 
     # Switch Back
     driver.switch_to.window(driver.window_handles[0])
-    return [rfp_id, name, response_date, response, bid_url, rep_name, rep_calendly_link]
+    return [rfp_id, name, response_date, google_sheet_response, bid_url, rep_name, rep_calendly_link]
