@@ -60,6 +60,7 @@ def get_io_bids(driver, page_limit):
                 job_details = get_bid(current_job_path, driver)
                 job_list.append(job_details)
                 logging.info(f"[Requests]: Current App Name: {job_details[1]} | RFP_ID: {job_details[0]}")
+                devtracker_sleep(2, 4)
 
             # Paginate by finding forward arrow icon
             forward_btn = driver.find_element(By.XPATH, "//button[text()='arrow_forward']")
@@ -199,16 +200,17 @@ def get_bid(job_elem, driver):
             logging.critical(f"[Bids]: Error Message {e}")
             devtracker_sleep(1, 2)
             continue
-
-    devtracker_sleep(1, 2)
+    devtracker_sleep(2, 4)
 
     # Switch to new Tab as clicking on a bid will open it in a new tab
     driver.switch_to.window(driver.window_handles[-1])
+    devtracker_sleep(2, 4)
 
     # Check if the Bid is opened & Get Data
     # Extract Name
     name_path = "//*[contains(@class, 'cnaBaVaB8')]"
     WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.XPATH, name_path)))
+    devtracker_sleep(2, 4)
     name = str(driver.find_element(By.XPATH, name_path).text).strip()
 
     # Extract Response Date
@@ -221,7 +223,7 @@ def get_bid(job_elem, driver):
     response_path = "//div[contains(@class, 'cnaBaWc8')]"
     response_text = driver.find_element(By.XPATH, response_path).text
     # Updating Response for Google Sheets' 50000 Char Limit per Cell
-    google_sheet_response = limit_string(input_string=response_text, max_chars=response_char_limit)
+    gs_resp = limit_string(input_string=response_text, max_chars=response_char_limit)
 
     # Extract Rep
     rep_name = get_rep_name(driver, response_text)
@@ -245,4 +247,5 @@ def get_bid(job_elem, driver):
 
     # Switch Back
     driver.switch_to.window(driver.window_handles[0])
-    return [rfp_id, name, response_date, google_sheet_response, bid_url, rep_name, rep_calendly_link]
+    devtracker_sleep(2, 4)
+    return [rfp_id, name, response_date, gs_resp, bid_url, rep_name, rep_calendly_link]

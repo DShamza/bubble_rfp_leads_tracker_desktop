@@ -42,7 +42,7 @@ def requests_main_script(driver):
                 for non_etl_row_vals in tqdm(non_etl_rows, desc="[Script Log | Requests]: Extracting New Requests"):
                     # Get Email Request URL
                     email_req_url = non_etl_row_vals[0]
-                    logging.info(f"Now Extracting: {email_req_url}")
+                    logging.info(f"[Script Log | Requests]: Now Extracting: {email_req_url}")
 
                     # Get RFP_Request Data using Email Request URL
                     rfp_req_results = get_rfp_request(email_req_url, driver)
@@ -89,7 +89,8 @@ def requests_main_script(driver):
                         gs_update_data(sh, row_index, [non_etl_row_vals[:-1]])
                         devtracker_sleep(1, 2)
         except Exception as e:
-            logging.critical(f"[Script Log | Requests]: Something went wrong: {e}")
+            logging.critical(f"[Script Log | Requests]: Something went wrong: {e}", exc_info=True)
+            raise Exception
     else:
         logging.warning("[Script Log | Requests]: No New Requests Found")
     logging.info("[Script Log | Requests]: Iteration complete, Requests Script is Restarting...")
