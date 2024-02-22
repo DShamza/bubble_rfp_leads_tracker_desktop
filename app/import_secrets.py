@@ -17,6 +17,7 @@ alerts_channel_name = os.environ.get("ALERTS_SLACK_CH_NAME")
 request_channel_name = os.environ.get("AGENCY_REQS_SLACK_CH_NAME")
 request_channel_direct = os.environ.get("DIRECT_REQS_SLACK_CH_NAME")
 response_channel_name = os.environ.get("RESPONSE_SLACK_CH_NAME")
+member_ids = os.environ.get("MEMBER_IDS")
 
 # GS
 spreadsheet_id = os.environ.get("SPREADSHEET_ID")

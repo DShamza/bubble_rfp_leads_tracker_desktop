@@ -14,6 +14,7 @@ from functions import bubbleio_login
 from functions_slack import slack_notification
 from requests_functions import get_rfp_request
 from requests_functions import send_req_slack_msg
+from requests_functions import select_slack_channel
 
 
 def requests_main_script(driver):
@@ -29,7 +30,7 @@ def requests_main_script(driver):
 
     # Filter out the rows for which the Slack Message has already been sent.
     logging.info("[Script Log | Requests]: Removing threads for which the message has already been sent.")
-    non_etl_df = req_df.loc[req_df['etl_status'] != 'Y']
+    non_etl_df = req_df.loc[(req_df['etl_status'] != 'Y') & (req_df['etl_status'] != 'RFP Link Error')]
     logging.info(f"[Script Log | Requests]: Data to be Extracted, Rows, Columns: {non_etl_df.shape}")
 
     # Extracting Data for Non-ETL Requests
@@ -42,54 +43,50 @@ def requests_main_script(driver):
                 for non_etl_row_vals in tqdm(non_etl_rows, desc="[Script Log | Requests]: Extracting New Requests"):
                     # Get Email Request URL
                     email_req_url = non_etl_row_vals[0]
-                    logging.info(f"Now Extracting: {email_req_url}")
+                    logging.info(f"[Script Log | Requests]: Now Extracting: {email_req_url}")
+                    if email_req_url:
+                        # Get RFP_Request Data using Email Request URL
+                        rfp_req_results = get_rfp_request(email_req_url, driver)
+                        logging.info("[Script Log | Requests]: RFP Request Results: %s", rfp_req_results)
 
-                    # Get RFP_Request Data using Email Request URL
-                    rfp_req_results = get_rfp_request(email_req_url, driver)
-                    logging.info(rfp_req_results)
+                        # Extracting relevant information from RFP results
+                        (rfp_id, client_first_name, project_title, tags, pricing, req_timestamp, description,
+                         request_url) = rfp_req_results
 
-                    # RFP ID
-                    non_etl_row_vals[1] = rfp_req_results[0]
+                        # Update non_etl_row_vals with RFP data
+                        non_etl_row_vals[1] = rfp_id
+                        non_etl_row_vals[2] = client_first_name
+                        non_etl_row_vals[3] = project_title
+                        non_etl_row_vals[4] = tags
+                        non_etl_row_vals[5] = pricing
+                        non_etl_row_vals[7] = description
+                        non_etl_row_vals[8] = request_url
 
-                    # Client First Name
-                    non_etl_row_vals[2] = rfp_req_results[1]
-
-                    # Project Title
-                    non_etl_row_vals[3] = rfp_req_results[2]
-
-                    # Tags
-                    non_etl_row_vals[4] = rfp_req_results[3]
-
-                    # Pricing
-                    non_etl_row_vals[5] = rfp_req_results[4]
-
-                    # # Timestamp (Already Inserted)
-                    # non_etl_row_vals[6] = rfp_req_results[5]
-
-                    # Description
-                    non_etl_row_vals[7] = rfp_req_results[6]
-
-                    # Request URL
-                    non_etl_row_vals[8] = rfp_req_results[7]
+                        # Set Slack Message Status
+                        slack_msg_status = "Y"
+                    else:
+                        logging.critical("[Script Log | Requests]: RFP Link Error")
+                        slack_msg_status = "RFP Link Error"
+                        rfp_req_results = ["", "", "", "", ":rotating_light: RFP LINK ERROR :rotating_light:", "",
+                                           f"{member_ids} Records with empty request links were detected in "
+                                           f"Request Google Sheet, Please check RFP System for Any Errors",
+                                           ""]
 
                     # Slack Thread
-                    if non_etl_row_vals[10] == "Agency Request":
-                        non_etl_row_vals[9] = send_req_slack_msg(request_channel_name, rfp_req_results)
-                    elif non_etl_row_vals[10] == "Direct Request":
-                        non_etl_row_vals[9] = send_req_slack_msg(request_channel_direct, rfp_req_results)
-                    else:
-                        logging.warning("Request Type is not included, Sending to Agency Request Channel.")
-                        non_etl_row_vals[9] = send_req_slack_msg(request_channel_name, rfp_req_results)
+                    non_etl_row_vals[9] = send_req_slack_msg(select_slack_channel(non_etl_row_vals[10]),
+                                                             rfp_req_results)
 
                     # Verify if Slack Message is sent
                     if non_etl_row_vals[9]:
-                        non_etl_row_vals[-2] = "Y"
+                        non_etl_row_vals[-2] = slack_msg_status
                         # Update Google Sheets
                         row_index = non_etl_row_vals[-1]
                         gs_update_data(sh, row_index, [non_etl_row_vals[:-1]])
                         devtracker_sleep(1, 2)
-        except Exception as e:
-            logging.critical(f"[Script Log | Requests]: Something went wrong: {e}")
+
+        except Exception as _:
+            logging.critical(f"[Script Log | Requests]: Something went wrong:", exc_info=True)
+            raise
     else:
         logging.warning("[Script Log | Requests]: No New Requests Found")
     logging.info("[Script Log | Requests]: Iteration complete, Requests Script is Restarting...")
@@ -106,7 +103,7 @@ def exec_req_main_script():
         try:
             requests_main_script(driver)
         except Exception as e:
-            logging.info(f"[Script Log | Requests]: RFP Request Tracker is Down,  Error: {e}")
+            logging.critical(f"[Script Log | Requests]: RFP Request Tracker is Down,  Error:", exc_info=True)
             slack_notification(channel=alerts_channel_name,
                                msg_text=":incoming_envelope: :x: RFP Request Tracker is Down :x:",
                                exception_trace=e)
@@ -117,7 +114,7 @@ def exec_req_main_script():
         driver.quit()
         logging.info(f"[Script Log | Requests]: Closing Driver")
     except Exception as e:
-        logging.info(f"[Script Log | Requests]: Driver is already closed {e}")
+        logging.warning(f"[Script Log | Requests]: Driver is already closed {e}")
 
     devtracker_sleep(30, 60)
     slack_notification(channel=alerts_channel_name,

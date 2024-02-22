@@ -8,6 +8,7 @@ from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import InvalidSessionIdException
 from selenium.webdriver.support import expected_conditions as EC
 
+from import_secrets import *
 from functions import limit_string
 from functions import extract_dates
 from functions import devtracker_sleep
@@ -19,6 +20,22 @@ sel_timeout = 60
 
 
 def open_req_url(rfp_req_url, driver):
+    """
+    Opens the provided request URL in the given Selenium WebDriver.
+
+    Retries if a timeout occurs or if there are issues accessing the URL.
+
+    Args:
+        rfp_req_url (str): The URL of the request to be opened.
+        driver: The Selenium WebDriver instance.
+
+    Returns:
+        None
+
+    Raises:
+        InvalidSessionIdException: If an invalid session ID is encountered.
+        WebDriverException: If a WebDriver-related exception occurs.
+    """
     retry_count = 0
     req_name_path = "//*[contains(@class, 'cnaBaVaB8')]"
     while True:
@@ -52,6 +69,17 @@ def open_req_url(rfp_req_url, driver):
 
 
 def get_rfp_request(rfp_req_url, driver):
+    """
+    Extracts relevant information from the provided RFP request URL using the given Selenium WebDriver.
+
+    Args:
+        rfp_req_url (str): The URL of the RFP request to be processed.
+        driver: The Selenium WebDriver instance.
+
+    Returns:
+        list: A list containing the extracted information in the following order:
+              [rfp_id, client_first_name, proj_title, tags, pricing, req_created_date, description, request_url]
+    """
     # Open Req_URL
     open_req_url(rfp_req_url, driver)
 
@@ -76,7 +104,8 @@ def get_rfp_request(rfp_req_url, driver):
     # Extract Request Description
     description_char_limit = 50000
     description = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaNaq2')]").text
-    description = limit_string(s=description, max_chars=description_char_limit)
+    # Updating Job Description for Google Sheets' 50000 Char Limit per Cell
+    gs_description = limit_string(input_string=description, max_chars=description_char_limit)
 
     # Extract Request URL
     request_url = driver.current_url
@@ -84,7 +113,7 @@ def get_rfp_request(rfp_req_url, driver):
     # Extract the Rfp_id
     rfp_id = str(request_url.split("=")[-1])
 
-    return [rfp_id, client_first_name, proj_title, tags, pricing, req_created_date, description, request_url]
+    return [rfp_id, client_first_name, proj_title, tags, pricing, req_created_date, gs_description, request_url]
 
 
 def send_req_slack_msg(channel_name, data_list):
@@ -109,3 +138,22 @@ def send_req_slack_msg(channel_name, data_list):
 
     # return the time-stamp to be saved in the GoogleSheet
     return str(msg_response)
+
+
+def select_slack_channel(request_type):
+    """
+    Selects the Slack channel based on the request type.
+
+    Args:
+        request_type (str): Type of the request.
+
+    Returns:
+        str: Selected Slack channel.
+    """
+    if request_type == "Agency Request":
+        return request_channel_name
+    elif request_type == "Direct Request":
+        return request_channel_direct
+    else:
+        logging.warning("Request Type is not included, Sending to Agency Request Channel.")
+        return request_channel_name
