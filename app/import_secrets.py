@@ -3,8 +3,8 @@ import os
 from dotenv import load_dotenv
 
 # Initialize Env
-load_dotenv()
-# load_dotenv("../.env.prod")
+# load_dotenv()
+load_dotenv("../.env.prod")
 
 # CREDs
 email = os.environ.get("EMAIL")

@@ -56,8 +56,11 @@ def bids_main_script():
                                                                     'rep_calendly_link'])
                     new_rec_count = str(diff_df.shape[0])
                     logging.info(f"[Bids]: New Unique records found: {new_rec_count}")
-                    diff_df_final = diff_df.fillna("")
-                    gs_insert_data(sh, diff_df_final.values.tolist())
+                    if diff_df.shape[0]:
+                        diff_df_final = diff_df.fillna("")
+                        gs_insert_data(sh, diff_df_final.values.tolist(), "Bids")
+                    else:
+                        logging.warning("[Bids]: No new records found, Skipping...")
                     devtracker_sleep(10, 15)
 
                 except Exception as e:

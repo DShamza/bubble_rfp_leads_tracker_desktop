@@ -275,7 +275,7 @@ def gs_get_data(sh):
     return []
 
 
-def gs_insert_data(sh, bubble_data):
+def gs_insert_data(sh, bubble_data, script_type):
     """
     Insert Data into Google Sheets.
     :return:
@@ -289,7 +289,7 @@ def gs_insert_data(sh, bubble_data):
             logging.critical("[Functions]: [GS Insert Data] Unable to insert data in Google Sheets")
             gs_status_code = gs_api_error.response.status_code
             if gs_status_code == 429 or gs_status_code == 503:
-                logging.critical(f"Status Code: {gs_status_code}")
+                logging.critical(f"[Functions]: [GS Insert Data] Status Code: {gs_status_code}")
                 error_count += 1
                 devtracker_sleep(60, 80)
             else:
@@ -300,13 +300,13 @@ def gs_insert_data(sh, bubble_data):
             if error_count % 10 == 0:
                 slack_notification(
                     channel=alerts_channel_name,
-                    msg_text=":rotating_light: Error while inserting data rows to google sheets :rotating_light:",
+                    msg_text=f":rotating_light: [{script_type}] Error while inserting data rows to google sheets :rotating_light:",
                     exception_trace=e,
                 )
                 if error_count % 50 == 0:
                     slack_notification(
                         channel=alerts_channel_name,
-                        msg_text=":rotating_light: Bids and Requests Tracker is down! :rotating_light:",
+                        msg_text=f":rotating_light: [{script_type}] Tracker is down! :rotating_light:",
                         exception_trace=e,
                     )
             devtracker_sleep(1, 5)
