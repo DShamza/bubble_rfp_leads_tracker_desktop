@@ -10,6 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import WebDriverException
 from selenium.common.exceptions import InvalidSessionIdException
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -192,7 +193,11 @@ def get_bid(job_elem, driver):
             driver.find_element(By.XPATH, job_elem).click()
             break
         except InvalidSessionIdException:
-            logging.critical("[Bids]: Browser Crashed, retrying!")
+            logging.critical("[Bids]: Browser Crashed due to Invalid Session ID, retrying!")
+            devtracker_sleep(1, 2)
+            raise Exception
+        except WebDriverException:
+            logging.critical("[Bids]: Browser Crashed due to Web Driver Exception, retrying!")
             devtracker_sleep(1, 2)
             raise Exception
         except Exception as e:
