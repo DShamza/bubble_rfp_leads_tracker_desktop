@@ -87,7 +87,7 @@ def get_rfp_request(rfp_req_url, driver):
     proj_title = str(driver.find_element(By.XPATH, proj_title_path).text).strip()
 
     # Extract Client First Name
-    f_name_path = "//*[text()='First name']/following-sibling::div[1]"
+    f_name_path = "//*[text()='Full name']/following-sibling::div[1]"
     client_first_name = str(driver.find_element(By.XPATH, f_name_path).text).strip()
 
     # Extract Tags
@@ -102,7 +102,8 @@ def get_rfp_request(rfp_req_url, driver):
 
     # Extract Request Description
     description_char_limit = 50000
-    description = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaNaq2')]").text
+    # description = driver.find_element(By.XPATH, "//div[contains(@class, 'cnaNaq2')]").text
+    description = driver.find_element(By.XPATH, "//div[contains(@class, 'coaKaPaY')]").text
     # Updating Job Description for Google Sheets' 50000 Char Limit per Cell
     description = limit_string(input_string=description, max_chars=description_char_limit)
 
